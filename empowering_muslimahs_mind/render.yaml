@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: noor-for-her
+    env: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate
+    startCommand: gunicorn empowering_muslimahs_mind.wsgi:application
+    envVars:
+      - key: DEBUG
+        value: False
+      - key: SECRET_KEY
+        generateValue: true

@@ -42,17 +42,21 @@ class JournalEntry(models.Model):
 
 
 class DailyPrompt(models.Model):
-    text = models.CharField(max_length=300)
-    active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.text
-
-class DailyPrompt(models.Model):
     PROMPT_THEMES = [
         ("journal", "Free Journal"),
         ("reflection", "Trigger Reflection"),
     ]
+
+    text = models.CharField(max_length=300)
+    theme = models.CharField(
+        max_length=20,
+        choices=PROMPT_THEMES,
+        default="journal",
+    )
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.text
 
     text = models.CharField(max_length=300)
     theme = models.CharField(max_length=20, choices=PROMPT_THEMES)
@@ -60,3 +64,5 @@ class DailyPrompt(models.Model):
 
     def __str__(self):
         return f"{self.theme}: {self.text}"
+
+    created_at = models.DateTimeField(auto_now_add=True)
