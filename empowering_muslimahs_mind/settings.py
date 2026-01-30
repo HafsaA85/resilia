@@ -22,6 +22,9 @@ load_dotenv(BASE_DIR / ".env")
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load .env
+load_dotenv(BASE_DIR / ".env")
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -127,14 +130,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+STATICFILES_DIRS = []
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Redirects after login / logout
 LOGIN_REDIRECT_URL = "/tracker/"   # after login
-LOGIN_URL = "/login/"              # where @login_required sends users
+LOGIN_URL = "/register/"             # where @login_required sends users
 
 
 

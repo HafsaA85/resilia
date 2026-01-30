@@ -92,6 +92,21 @@ button.btn {
     border: 1px solid #f3d9f5;
 }
 
+.streak-day {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+}
+
+.streak-active {
+    background-color: #86efac;
+}
+
+.streak-empty {
+    background-color: #e5e7eb;
+}
+
+
 
 
 

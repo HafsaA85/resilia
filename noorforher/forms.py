@@ -2,7 +2,13 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import AnxietyTrigger
+from .models import JournalEntry
 
+
+class JournalEntryForm(forms.ModelForm):
+    class Meta:
+        model = JournalEntry
+        fields = ["title", "content"]
 
 class UserRegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -48,4 +54,9 @@ class AnxietyTriggerForm(forms.ModelForm):
             "outcome": forms.Textarea(attrs={"rows": 3}),
             "date": forms.DateInput(attrs={"type": "date"}),
         }
+
+class JournalEntryForm(forms.ModelForm):
+    class Meta:
+        model = JournalEntry
+        fields = ["trigger", "title", "content"]
 

@@ -1,87 +1,105 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.contrib.auth import login         
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from .forms import UserRegisterForm, AnxietyTriggerForm
-from .models import AnxietyTrigger
-from django.contrib.auth import logout 
 from django.contrib.auth.forms import UserCreationForm
-from django.db.models import Avg, Count, Q
 from django.utils import timezone
 from datetime import timedelta
-import requests
+from django.db.models import Avg, Count
+
+from .models import AnxietyTrigger, JournalEntry
+from .forms import AnxietyTriggerForm, JournalEntryForm
 
 
+print("✅ noorforher.views loaded")
 
+
+# =========================
+# HOME
+# =========================
 def home(request):
+    if not request.user.is_authenticated:
+        return render(request, "home.html")
+
+    triggers = AnxietyTrigger.objects.filter(user=request.user)
+    journal_entries = JournalEntry.objects.filter(user=request.user)
+
+    today = timezone.now().date()
+    last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+
+    journal_days = set(
+        journal_entries.values_list("created_at__date", flat=True)
+    )
+
+    streak = 0
+    for day in reversed(last_7_days):
+        if day in journal_days:
+            streak += 1
+        else:
+            break
+
     insights = None
-    affirmation = None
-    trend = None  # up / down / flat
+    trend = None
 
-    if request.user.is_authenticated:
-        qs = AnxietyTrigger.objects.filter(user=request.user)
+    if triggers.exists():
+        avg_intensity = triggers.aggregate(avg=Avg("intensity"))["avg"]
 
-        # ---------- INSIGHTS ----------
-        if qs.exists():
-            today = timezone.now().date()
+        high_intensity_count = triggers.filter(intensity__gte=7).count()
+        entries_last_7 = triggers.filter(
+            created_at__date__gte=today - timedelta(days=6)
+        ).count()
 
-            # Last 7 days
-            last_7_days = today - timedelta(days=7)
-            this_week = qs.filter(date__gte=last_7_days)
-            avg_this_week = this_week.aggregate(Avg("intensity"))["intensity__avg"]
+        top_triggers = (
+            triggers.values("situation")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:3]
+        )
 
-            # Previous 7 days
-            prev_7_start = last_7_days - timedelta(days=7)
-            prev_week = qs.filter(date__gte=prev_7_start, date__lt=last_7_days)
-            avg_prev_week = prev_week.aggregate(Avg("intensity"))["intensity__avg"]
+        insights = {
+            "avg_intensity": round(avg_intensity, 1) if avg_intensity else 0,
+            "high_intensity_count": high_intensity_count,
+            "entries_last_7": entries_last_7,
+            "top_triggers": top_triggers,
+        }
 
-            # Overall stats
-            avg_intensity = qs.aggregate(Avg("intensity"))["intensity__avg"]
-            high_intensity_count = qs.filter(intensity__gte=7).count()
-            entries_last_7 = this_week.count()
+        recent = triggers.filter(
+            created_at__date__gte=today - timedelta(days=6)
+        ).aggregate(avg=Avg("intensity"))["avg"]
 
-            top_triggers = (
-                qs.values("situation")
-                .annotate(count=Count("id"))
-                .order_by("-count")[:3]
-            )
+        older = triggers.filter(
+            created_at__date__lt=today - timedelta(days=6)
+        ).aggregate(avg=Avg("intensity"))["avg"]
 
-            # Trend logic: up, down, flat
-            if avg_this_week is not None and avg_prev_week is not None:
-                if avg_this_week > avg_prev_week + 0.5:
-                    trend = "up"
-                elif avg_this_week < avg_prev_week - 0.5:
-                    trend = "down"
-                else:
-                    trend = "flat"
+        if recent and older:
+            if recent > older:
+                trend = "up"
+            elif recent < older:
+                trend = "down"
+            else:
+                trend = "flat"
 
-            insights = {
-                "avg_intensity": round(avg_intensity, 1) if avg_intensity is not None else None,
-                "high_intensity_count": high_intensity_count,
-                "entries_last_7": entries_last_7,
-                "top_triggers": top_triggers,
-                "avg_this_week": round(avg_this_week, 1) if avg_this_week is not None else None,
-                "avg_prev_week": round(avg_prev_week, 1) if avg_prev_week is not None else None,
-            }
+    affirmation = (
+        "You are allowed to go gently. Healing does not rush."
+        if journal_entries.exists()
+        else None
+    )
 
-        # ---------- AFFIRMATION ----------
-        try:
-            resp = requests.get("https://www.affirmations.dev/", timeout=3)
-            if resp.status_code == 200:
-                data = resp.json()
-                affirmation = data.get("affirmation")
-        except Exception:
-            affirmation = None
-
-    context = {
-        "insights": insights,
-        "affirmation": affirmation,
-        "trend": trend,
-    }
-    return render(request, "home.html", context)
+    return render(
+        request,
+        "home.html",
+        {
+            "last_7_days": last_7_days,
+            "journal_days": journal_days,
+            "streak": streak,
+            "affirmation": affirmation,
+            "insights": insights,
+            "trend": trend,
+        },
+    )
 
 
-
+# =========================
+# STATIC PAGES
+# =========================
 def about(request):
     return render(request, "about.html")
 
@@ -90,19 +108,39 @@ def work_with_me(request):
     return render(request, "work_with_me.html")
 
 
+def terms_of_use(request):
+    return render(request, "terms_of_use.html")
+
+
+def privacy_policy(request):
+    return render(request, "privacy_policy.html")
+
+
+# =========================
+# AUTH
+# =========================
 def register(request):
     if request.method == "POST":
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)  # log the user in
-            return redirect("noorforher:data_consent")  # 👈 go to consent page
+            login(request, user)
+            return redirect("noorforher:home")
     else:
         form = UserCreationForm()
+
     return render(request, "register.html", {"form": form})
 
 
+def logout_view(request):
+    logout(request)
+    return redirect("noorforher:home")
 
+
+# =========================
+# ANXIETY TRIGGERS
+# =========================
+@login_required
 def tracker_list(request):
     triggers = AnxietyTrigger.objects.filter(user=request.user)
     return render(request, "tracker_list.html", {"triggers": triggers})
@@ -119,12 +157,14 @@ def tracker_create(request):
             return redirect("noorforher:tracker_list")
     else:
         form = AnxietyTriggerForm()
+
     return render(request, "tracker_form.html", {"form": form})
 
 
 @login_required
 def tracker_update(request, pk):
     trigger = get_object_or_404(AnxietyTrigger, pk=pk, user=request.user)
+
     if request.method == "POST":
         form = AnxietyTriggerForm(request.POST, instance=trigger)
         if form.is_valid():
@@ -132,33 +172,72 @@ def tracker_update(request, pk):
             return redirect("noorforher:tracker_list")
     else:
         form = AnxietyTriggerForm(instance=trigger)
+
     return render(request, "tracker_form.html", {"form": form, "update": True})
 
-def logout_view(request):
-    logout(request)  # logs the user out
-    return redirect("noorforher:home")  # send them to home page
+
+# =========================
+# JOURNAL
+# =========================
+@login_required
+def journal_list(request):
+    entries = JournalEntry.objects.filter(user=request.user)
+    return render(request, "journal/list.html", {"entries": entries})
+
 
 @login_required
-def data_consent(request):
+def journal_create(request, trigger_id=None):
+    trigger = None
+
+    if trigger_id:
+        trigger = get_object_or_404(
+            AnxietyTrigger, pk=trigger_id, user=request.user
+        )
+
     if request.method == "POST":
-        # check everything is ticked
-        if (
-            request.POST.get("agree_terms")
-            and request.POST.get("agree_privacy")
-            and request.POST.get("agree_health")
-        ):
-            # later you could store a flag on a Profile model here
-            return redirect("noorforher:home")
-        else:
-            error = "Please agree to all items to continue."
-            return render(request, "data_consent.html", {"error": error})
+        form = JournalEntryForm(request.POST)
+        form.fields["trigger"].queryset = AnxietyTrigger.objects.filter(
+            user=request.user
+        )
 
-    return render(request, "data_consent.html")
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.user = request.user
+            if trigger:
+                entry.trigger = trigger
+            entry.save()
+            return redirect("noorforher:journal_list")
+    else:
+        initial = {"trigger": trigger} if trigger else {}
+        form = JournalEntryForm(initial=initial)
+        form.fields["trigger"].queryset = AnxietyTrigger.objects.filter(
+            user=request.user
+        )
+
+    return render(request, "journal/form.html", {"form": form, "trigger": trigger})
 
 
-def terms_of_use(request):
-    return render(request, "terms_of_use.html")
+@login_required
+def journal_edit(request, pk):
+    entry = get_object_or_404(JournalEntry, pk=pk, user=request.user)
+
+    if request.method == "POST":
+        form = JournalEntryForm(request.POST, instance=entry)
+        if form.is_valid():
+            form.save()
+            return redirect("noorforher:journal_list")
+    else:
+        form = JournalEntryForm(instance=entry)
+
+    return render(request, "journal/form.html", {"form": form, "edit": True})
 
 
-def privacy_policy(request):
-    return render(request, "privacy_policy.html")
+@login_required
+def journal_delete(request, pk):
+    entry = get_object_or_404(JournalEntry, pk=pk, user=request.user)
+
+    if request.method == "POST":
+        entry.delete()
+        return redirect("noorforher:journal_list")
+
+    return render(request, "journal/confirm_delete.html", {"entry": entry})

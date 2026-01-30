@@ -1,149 +1,194 @@
 {% extends "base.html" %}
 
 {% block content %}
+
+<!-- =========================
+ HERO
+========================= -->
 <div class="text-center p-5">
     <h1 class="mb-4">Assalamu Alaikum 🤍</h1>
     <p class="lead">
-        Welcome to <strong>Noor for Her</strong> <br/><br/>A faith-friendly space where you can gently understand
+        Welcome to <strong>Noor for Her</strong><br><br>
+        A faith-friendly space where you can gently understand
         your anxiety triggers and build quiet confidence, one day at a time.
     </p>
 
     {% if not user.is_authenticated %}
-    <a href="{% url 'noorforher:register' %}" class="btn btn-primary btn-lg mt-3">
-        Start Your Journey
-    </a>
+        <a href="{% url 'noorforher:register' %}" class="btn btn-primary btn-lg mt-3">
+            Start Your Journey
+        </a>
     {% endif %}
 </div>
 
 {% if user.is_authenticated %}
 
-    {# ---------- Today’s gentle reminder ---------- #}
-    {% if affirmation %}
-    <div class="container mb-4">
-        <div class="card shadow-sm affirmation-card">
-            <div class="card-body d-flex align-items-center">
-                <div class="me-3" style="font-size: 1.5rem;">🌿</div>
-                <div>
-                    <div class="text-muted" style="font-size: 0.85rem;">Today’s gentle reminder</div>
-                    <div style="font-size: 1rem; font-weight: 500;">
-                        {{ affirmation }}
-                    </div>
+<!-- =========================
+ PRIMARY ACTIONS
+========================= -->
+<div class="container mb-4 text-center">
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="{% url 'noorforher:tracker_list' %}"
+           class="btn btn-outline-secondary btn-lg px-4">
+            🧠 Anxiety Triggers
+        </a>
+
+        <a href="{% url 'noorforher:journal_create' %}"
+           class="btn btn-primary btn-lg px-4">
+            ✍️ Journal
+        </a>
+    </div>
+
+    <p class="text-muted mt-2" style="font-size: 0.9rem;">
+        Track what happened, or write freely — both are private and just for you.
+    </p>
+
+    <!-- =========================
+    VISUAL STREAK (LAST 7 DAYS)
+    ========================= -->
+    <div class="mt-3">
+        <div class="d-flex justify-content-center gap-2">
+            {% for day in last_7_days %}
+                <div
+    title="{{ day }}"
+    class="streak-day {% if day in journal_days %}streak-active{% else %}streak-empty{% endif %}">
+</div>
+
+            {% endfor %}
+        </div>
+
+        <p class="text-muted mt-2" style="font-size: 0.85rem;">
+            🔥 Reflection streak: <strong>{{ streak }}</strong>
+            day{{ streak|pluralize }}
+        </p>
+    </div>
+</div>
+
+<!-- =========================
+ AFFIRMATION
+========================= -->
+{% if affirmation %}
+<div class="container mb-4">
+    <div class="card shadow-sm">
+        <div class="card-body d-flex align-items-center">
+            <div class="me-3" style="font-size: 1.5rem;">🌿</div>
+            <div>
+                <div class="text-muted" style="font-size: 0.85rem;">
+                    Today’s gentle reminder
+                </div>
+                <div style="font-size: 1rem; font-weight: 500;">
+                    {{ affirmation }}
                 </div>
             </div>
         </div>
     </div>
-    {% endif %}
+</div>
+{% endif %}
 
-    {% if insights %}
-    <div class="container pb-5">
-        <div class="row g-3">
+<!-- =========================
+ INSIGHTS
+========================= -->
+{% if insights %}
+<div class="container pb-5">
+    <div class="row g-3">
 
-            <!-- Average anxiety + trend -->
-            <div class="col-md-4">
-                <div class="card shadow-sm insight-card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title mb-2">
-                            Average anxiety level
-                            {% if trend == "up" %}
-                                <span class="text-danger" title="Higher than last week">↑</span>
-                            {% elif trend == "down" %}
-                                <span class="text-success" title="Lower than last week">↓</span>
-                            {% elif trend == "flat" %}
-                                <span class="text-muted" title="Similar to last week">→</span>
-                            {% endif %}
-                        </h5>
-
-                        <p class="display-6 mb-1">
-                            {{ insights.avg_intensity }}/10
-                        </p>
-
-                        <p class="text-muted mb-0" style="font-size: 0.85rem;">
-                            This week: 
-                            {% if insights.avg_this_week %}{{ insights.avg_this_week }}/10{% else %}—{% endif %}
-                            · Last week:
-                            {% if insights.avg_prev_week %}{{ insights.avg_prev_week }}/10{% else %}—{% endif %}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- High-intensity entries -->
-            <div class="col-md-4">
-                <div class="card shadow-sm insight-card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title mb-2">High-anxiety entries</h5>
-                        <p class="display-6 mb-1">
-                            {{ insights.high_intensity_count }}
-                        </p>
-                        <p class="text-muted mb-0" style="font-size: 0.9rem;">
-                            Times anxiety was 7/10 or higher.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Last 7 days -->
-            <div class="col-md-4">
-                <div class="card shadow-sm insight-card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title mb-2">Last 7 days</h5>
-                        <p class="display-6 mb-1">
-                            {{ insights.entries_last_7 }}
-                        </p>
-                        <p class="text-muted mb-0" style="font-size: 0.9rem;">
-                            Entries you’ve added this week.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Top triggers -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card shadow-sm insight-card">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">Most common triggers</h5>
-
-                        {% if insights.top_triggers %}
-                            <ul class="list-unstyled mb-0">
-                                {% for item in insights.top_triggers %}
-                                    <li class="mb-2">
-                                        <strong>{{ forloop.counter }}.</strong>
-                                        {{ item.situation|truncatechars:120 }}
-                                        <span class="text-muted" style="font-size: 0.85rem;">
-                                            ({{ item.count }} time{{ item.count|pluralize }})
-                                        </span>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p class="text-muted mb-0">
-                                You don’t have enough entries yet to see patterns.
-                            </p>
+        <!-- Average anxiety -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">
+                        Average anxiety level
+                        {% if trend == "up" %}
+                            <span class="text-danger">↑</span>
+                        {% elif trend == "down" %}
+                            <span class="text-success">↓</span>
+                        {% elif trend == "flat" %}
+                            <span class="text-muted">→</span>
                         {% endif %}
-                    </div>
+                    </h5>
+
+                    <p class="display-6 mb-1">
+                        {{ insights.avg_intensity }}/10
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- High anxiety -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">High-anxiety entries</h5>
+                    <p class="display-6 mb-1">
+                        {{ insights.high_intensity_count }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Last 7 days -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">Last 7 days</h5>
+                    <p class="display-6 mb-1">
+                        {{ insights.entries_last_7 }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Top triggers -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Most common triggers</h5>
+
+                    {% if insights.top_triggers %}
+                        <ul class="list-unstyled mb-0">
+                            {% for item in insights.top_triggers %}
+                                <li class="mb-2">
+                                    <strong>{{ forloop.counter }}.</strong>
+                                    {{ item.situation|truncatechars:120 }}
+                                    <span class="text-muted" style="font-size: 0.85rem;">
+                                        ({{ item.count }} time{{ item.count|pluralize }})
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted mb-0">
+                            Not enough data yet.
+                        </p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    {% else %}
-    <!-- Authenticated but no entries yet -->
-    <div class="container pb-5">
-        <div class="card shadow-sm insight-card">
-            <div class="card-body text-center">
-                <h5 class="card-title mb-2">No insights yet (and that’s okay)</h5>
-                <p class="text-muted mb-3" style="font-size: 0.95rem;">
-                    Once you start logging your triggers, we’ll gently show you patterns here.
-                </p>
-                <a href="{% url 'noorforher:tracker_create' %}" class="btn btn-primary" style="border-radius: 999px;">
-                    Add your first entry
-                </a>
-            </div>
+{% else %}
+<!-- =========================
+ NO INSIGHTS YET
+========================= -->
+<div class="container pb-5">
+    <div class="card shadow-sm">
+        <div class="card-body text-center">
+            <h5 class="card-title mb-2">No insights yet (and that’s okay)</h5>
+            <p class="text-muted mb-3">
+                Once you start logging your triggers, patterns will appear here.
+            </p>
+            <a href="{% url 'noorforher:tracker_create' %}"
+               class="btn btn-primary"
+               style="border-radius: 999px;">
+                Add your first trigger
+            </a>
         </div>
     </div>
-    {% endif %}
+</div>
+{% endif %}
+
 {% endif %}
 {% endblock %}
