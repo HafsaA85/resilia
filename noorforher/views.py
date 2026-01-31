@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Avg, Count
 
 from .models import AnxietyTrigger, JournalEntry
 from .forms import AnxietyTriggerForm, JournalEntryForm
-
 
 print("✅ noorforher.views loaded")
 
@@ -43,39 +43,18 @@ def home(request):
     if triggers.exists():
         avg_intensity = triggers.aggregate(avg=Avg("intensity"))["avg"]
 
-        high_intensity_count = triggers.filter(intensity__gte=7).count()
-        entries_last_7 = triggers.filter(
-            created_at__date__gte=today - timedelta(days=6)
-        ).count()
-
-        top_triggers = (
-            triggers.values("situation")
-            .annotate(count=Count("id"))
-            .order_by("-count")[:3]
-        )
-
         insights = {
             "avg_intensity": round(avg_intensity, 1) if avg_intensity else 0,
-            "high_intensity_count": high_intensity_count,
-            "entries_last_7": entries_last_7,
-            "top_triggers": top_triggers,
+            "high_intensity_count": triggers.filter(intensity__gte=7).count(),
+            "entries_last_7": triggers.filter(
+                created_at__date__gte=today - timedelta(days=6)
+            ).count(),
+            "top_triggers": (
+                triggers.values("situation")
+                .annotate(count=Count("id"))
+                .order_by("-count")[:3]
+            ),
         }
-
-        recent = triggers.filter(
-            created_at__date__gte=today - timedelta(days=6)
-        ).aggregate(avg=Avg("intensity"))["avg"]
-
-        older = triggers.filter(
-            created_at__date__lt=today - timedelta(days=6)
-        ).aggregate(avg=Avg("intensity"))["avg"]
-
-        if recent and older:
-            if recent > older:
-                trend = "up"
-            elif recent < older:
-                trend = "down"
-            else:
-                trend = "flat"
 
     affirmation = (
         "You are allowed to go gently. Healing does not rush."
@@ -130,16 +109,41 @@ def register(request):
         form = UserCreationForm()
 
     return render(request, "register.html", {"form": form})
+
+
+def login_view(request):
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = AuthenticationForm(request, data=request.POST)
+
         if form.is_valid():
-            user = form.save()
+            user = form.get_user()
             login(request, user)
             return redirect("noorforher:home")
-    else:
-        form = UserCreationForm()
 
-    return render(request, "register.html", {"form": form})
+        messages.error(
+            request,
+            "Invalid username or password. Please try again."
+        )
+    else:
+        form = AuthenticationForm()
+
+    return render(request, "registration/login.html", {"form": form})
+
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+
+        if form.is_valid():
+            login(request, form.get_user())
+            return redirect("noorforher:home")
+
+       # messages.error(
+       #     request,
+       #     "Please enter a correct username and password.11111"
+       # )
+    else:
+        form = AuthenticationForm()
+
+    return render(request, "registration/login.html", {"form": form})
 
 
 def logout_view(request):
@@ -201,7 +205,9 @@ def journal_create(request, trigger_id=None):
 
     if trigger_id:
         trigger = get_object_or_404(
-            AnxietyTrigger, pk=trigger_id, user=request.user
+            AnxietyTrigger,
+            pk=trigger_id,
+            user=request.user
         )
 
     if request.method == "POST":
@@ -218,13 +224,37 @@ def journal_create(request, trigger_id=None):
             entry.save()
             return redirect("noorforher:journal_list")
     else:
-        initial = {"trigger": trigger} if trigger else {}
-        form = JournalEntryForm(initial=initial)
+        form = JournalEntryForm(
+            initial={"trigger": trigger} if trigger else None
+        )
         form.fields["trigger"].queryset = AnxietyTrigger.objects.filter(
             user=request.user
         )
 
-    return render(request, "journal/form.html", {"form": form, "trigger": trigger})
+    return render(
+        request,
+        "journal/form.html",
+        {"form": form, "trigger": trigger}
+    )
+
+    trigger = None
+    if trigger_id:
+        trigger = get_object_or_404(
+            AnxietyTrigger, pk=trigger_id, user=request.user
+        )
+
+    if request.method == "POST":
+        form = JournalEntryForm(request.POST)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.user = request.user
+            entry.trigger = trigger
+            entry.save()
+            return redirect("noorforher:journal_list")
+    else:
+        form = JournalEntryForm(initial={"trigger": trigger})
+
+    return render(request, "journal/form.html", {"form": form})
 
 
 @login_required
