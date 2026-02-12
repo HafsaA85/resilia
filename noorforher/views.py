@@ -6,9 +6,15 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Avg, Count
-
-from .models import AnxietyTrigger, JournalEntry
+from django.conf import settings
+from django.http import JsonResponse
+from functools import wraps
+from .models import AnxietyTrigger, JournalEntry, Subscription
 from .forms import AnxietyTriggerForm, JournalEntryForm
+import stripe
+
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 print("✅ noorforher.views loaded")
 
@@ -128,23 +134,6 @@ def login_view(request):
         form = AuthenticationForm()
 
     return render(request, "registration/login.html", {"form": form})
-
-    if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
-
-        if form.is_valid():
-            login(request, form.get_user())
-            return redirect("noorforher:home")
-
-       # messages.error(
-       #     request,
-       #     "Please enter a correct username and password.11111"
-       # )
-    else:
-        form = AuthenticationForm()
-
-    return render(request, "registration/login.html", {"form": form})
-
 
 def logout_view(request):
     logout(request)
@@ -281,3 +270,59 @@ def journal_delete(request, pk):
         return redirect("noorforher:journal_list")
 
     return render(request, "journal/confirm_delete.html", {"entry": entry})
+
+
+# =========================
+# STRIPE CUSTOMER PORTAL
+# =========================
+@login_required
+def customer_portal(request):
+    try:
+        subscription = Subscription.objects.get(user=request.user)
+    except Subscription.DoesNotExist:
+        return redirect("noorforher:upgrade")
+
+    session = stripe.billing_portal.Session.create(
+        customer=subscription.stripe_customer_id,
+        return_url="http://127.0.0.1:8000/",
+    )
+
+    return redirect(session.url)
+
+
+# =========================
+# PREMIUM DECORATOR
+# =========================
+def premium_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect("noorforher:login")
+
+        if not hasattr(request.user, "subscription") or not request.user.subscription.is_active:
+            return redirect("noorforher:upgrade")
+
+        return view_func(request, *args, **kwargs)
+
+    return wrapper
+
+
+# =========================
+# SUBSCRIPTION PAGES
+# =========================
+def upgrade(request):
+    return render(request, "upgrade.html")
+
+
+def subscription_success(request):
+    return render(request, "subscription_success.html")
+
+
+def subscription_cancel(request):
+    return render(request, "subscription_cancel.html")
+
+@login_required
+@premium_required
+def tracker_list(request):
+    triggers = AnxietyTrigger.objects.filter(user=request.user)
+    return render(request, "tracker_list.html", {"triggers": triggers})

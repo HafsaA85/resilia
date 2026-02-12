@@ -41,6 +41,9 @@ ALLOWED_HOSTS = os.getenv(
     "127.0.0.1,localhost,.onrender.com"
 ).split(",")
 
+STRIPE_PUBLIC_KEY = "your_public_key"
+STRIPE_SECRET_KEY = "your_secret_key"
+
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 

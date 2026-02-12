@@ -13,6 +13,33 @@ body {
     color: var(--text-dark);
 }
 
+nav.navbar.noor-navbar {
+    background-color: var(--accent);
+    height: auto;
+    padding: 0.5rem 1rem;
+}
+
+
+nav.navbar.noor-navbar .container {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-brand {
+    padding: 0 !important;
+    margin: 0; /* Remove default margin */
+}
+
+.navbar-logo {
+    max-height: 44px; /* Adjust to fit your design */
+    width: auto;
+}
+
+
+.page-content {
+    margin-top: 1.5rem;
+}
+
 /* Headings */
 h1, h2, h3 {
     color: var(--text-dark);
@@ -105,6 +132,8 @@ button.btn {
 .streak-empty {
     background-color: #e5e7eb;
 }
+
+
 
 
 

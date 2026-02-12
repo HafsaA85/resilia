@@ -16,11 +16,14 @@
 </head>
 <body class="bg-light">
 
-<nav class="navbar navbar-expand-lg shadow-sm" style="background-color: #F2E9E4;">
-    <div class="container">
-        <a class="navbar-brand fw-bold" style="color: #000 !important;" href="{% url 'noorforher:home' %}">
-            Noor for Her
+<nav class="navbar navbar-expand-lg shadow-sm noor-navbar">
+
+
+   <div class="container">
+        <a class="navbar-brand p-0 m-0" href="{% url 'noorforher:home' %}">
+            <img src="{% static 'images/noorforher.png' %}" alt="Noor for Her" class="navbar-logo">
         </a>
+
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -52,6 +55,12 @@
     </li>
 
     <li class="nav-item">
+    <a href="{% url 'noorforher:customer_portal' %}" class="nav-link">
+    Manage Subscription
+</a>
+</li>
+
+    <li class="nav-item">
         <a class="nav-link text-danger" href="{% url 'noorforher:logout' %}">Logout</a>
     </li>
 {% else %}
@@ -72,11 +81,10 @@
     </div>
 </nav>
 
-
-<div class="container py-5">
-
+<main class="page-content">
     {% block content %}{% endblock %}
-</div>
+</main>
+
 
 <footer>
     <p>© Noor for Her</p>
