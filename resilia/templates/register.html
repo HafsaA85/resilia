@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Join Resilia{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm p-4" style="background-color: var(--accent); border-radius: 16px;">
+                <h2 class="text-center mb-3">Join Resilia 🤍</h2>
+                <p class="text-center mb-4">
+                    Create your account and start tracking your anxiety triggers in a private, gentle space.
+                </p>
+
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Something needs a little adjustment:</strong>
+                        <ul class="mb-0 mt-2">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary w-100 mt-2">
+                        Create Account
+                    </button>
+                </form>
+
+                <p class="text-center mt-3 mb-0">
+                    Already have an account?
+                    <a href="{% url 'login' %}">Log in here</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

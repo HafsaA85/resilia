@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Contact | Resilia{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:700px;">
+
+    <h1 class="mb-4">Partner With Resilia</h1>
+
+    <p class="mb-4">
+        If your organisation would like to support the emotional wellbeing of your people,
+        we’d be happy to explore how Resilia can help.
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            {{ form.organisation_name.label_tag }}
+            {{ form.organisation_name }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.contact_name.label_tag }}
+            {{ form.contact_name }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.email.label_tag }}
+            {{ form.email }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.role.label_tag }}
+            {{ form.role }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.organisation_type.label_tag }}
+            {{ form.organisation_type }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.message.label_tag }}
+            {{ form.message }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Request Information
+        </button>
+
+    </form>
+
+</div>
+{% endblock %}

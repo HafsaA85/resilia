@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow-sm mx-auto" style="max-width: 480px;">
+        <div class="card-body text-center">
+            <h5 class="mb-3">Delete journal entry?</h5>
+
+            <p class="text-muted mb-4">
+                This reflection will be permanently deleted.
+                <br>
+                Are you sure you want to continue?
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'resilia:journal_list' %}"
+                       class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-danger">
+                        Yes, delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

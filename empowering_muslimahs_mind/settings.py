@@ -14,6 +14,9 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv  # <- you’ll install this in a moment
 
+load_dotenv()
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load .env
@@ -56,7 +59,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'noorforher',
+    "resilia",
+    "organisations",
 ]
 
 MIDDLEWARE = [
@@ -144,5 +148,17 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 LOGIN_REDIRECT_URL = "/tracker/"   # after login
 LOGIN_URL = "/register/"             # where @login_required sends users
 
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "mail.zaynsolutions.com"
+EMAIL_PORT = 25
+EMAIL_USE_SSL = False
+EMAIL_USE_TLS = False
+
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 

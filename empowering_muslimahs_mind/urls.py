@@ -11,5 +11,5 @@ urlpatterns = [
         name="login",
     ),
 
-    path("", include("noorforher.urls")),
+    path("", include("resilia.urls")),
 ]
