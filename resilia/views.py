@@ -8,7 +8,7 @@ from datetime import timedelta
 from django.db.models import Avg, Count
 from django.conf import settings
 from functools import wraps
-from .models import AnxietyTrigger, JournalEntry, Subscription
+from .models import AnxietyTrigger, JournalEntry, Subscription, OrganisationLead
 from .forms import AnxietyTriggerForm, JournalEntryForm
 import stripe
 from .forms import OrganisationContactForm
@@ -389,13 +389,14 @@ def subscription_success(request):
 def subscription_cancel(request):
     return render(request, "subscription_cancel.html")
 
+@login_required
 def tracker_list(request):
     triggers = AnxietyTrigger.objects.filter(user=request.user)
     exercises = get_user_cbt_recommendations(request.user)
 
     return render(
         request,
-        "resilia/tracker_list.html",
+        "tracker_list.html",   # ✅ removed resilia/
         {
             "triggers": triggers,
             "exercises": exercises,
@@ -404,8 +405,4 @@ def tracker_list(request):
 
 def exercise_detail(request, pk):
     exercise = get_object_or_404(CBTExercise, pk=pk)
-    return render(
-        request,
-        "resilia/exercise_detail.html",
-        {"exercise": exercise},
-    )
+    return render(request, "exercise_detail.html", {"exercise": exercise})

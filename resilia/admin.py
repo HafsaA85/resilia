@@ -5,6 +5,7 @@ import csv
 from django.http import HttpResponse
 from .models import CBTExercise
 
+
 @admin.register(AnxietyTrigger)
 class AnxietyTriggerAdmin(admin.ModelAdmin):
     list_display = ("user", "situation", "intensity", "created_at")
@@ -35,16 +36,61 @@ class OrganisationLeadAdmin(admin.ModelAdmin):
         "contact_name",
         "email",
         "organisation_type",
+        "organisation_size",
         "status",
         "created_at",
     )
 
-    list_filter = ("status", "organisation_type", "created_at")
-    search_fields = ("organisation_name", "contact_name", "email")
+    list_filter = (
+        "status",
+        "organisation_type",
+        "created_at",
+    )
+
+    search_fields = (
+        "organisation_name",
+        "contact_name",
+        "email",
+    )
+
     ordering = ("-created_at",)
+    readonly_fields = ("created_at",)
 
-    actions = ["export_csv"]
+    fieldsets = (
+        ("Organisation", {
+            "fields": (
+                "organisation_name",
+                "organisation_type",
+                "organisation_size",
+            )
+        }),
+        ("Contact", {
+            "fields": (
+                "contact_name",
+                "email",
+                "role",
+            )
+        }),
+        ("Enquiry", {
+            "fields": (
+                "message",
+                "notes",
+                "status",
+            )
+        }),
+        ("Meta", {
+            "fields": ("created_at",),
+        }),
+    )
 
+    actions = [
+        "export_csv",
+        "mark_contacted",
+        "mark_demo",
+        "mark_converted",
+    ]
+
+    # ---------- CSV EXPORT ----------
     def export_csv(self, request, queryset):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = "attachment; filename=resilia_leads.csv"
@@ -55,6 +101,7 @@ class OrganisationLeadAdmin(admin.ModelAdmin):
             "Contact",
             "Email",
             "Type",
+            "Size",
             "Status",
             "Created",
         ])
@@ -65,6 +112,7 @@ class OrganisationLeadAdmin(admin.ModelAdmin):
                 lead.contact_name,
                 lead.email,
                 lead.organisation_type,
+                lead.organisation_size,
                 lead.status,
                 lead.created_at,
             ])
@@ -72,6 +120,22 @@ class OrganisationLeadAdmin(admin.ModelAdmin):
         return response
 
     export_csv.short_description = "Export selected leads to CSV"
+
+    # ---------- PIPELINE ACTIONS ----------
+    def mark_contacted(self, request, queryset):
+        queryset.update(status="contacted")
+
+    mark_contacted.short_description = "Mark as Contacted"
+
+    def mark_demo(self, request, queryset):
+        queryset.update(status="demo")
+
+    mark_demo.short_description = "Mark as Demo Scheduled"
+
+    def mark_converted(self, request, queryset):
+        queryset.update(status="converted")
+
+    mark_converted.short_description = "Mark as Converted"
 
     @admin.register(CBTExercise)
     
