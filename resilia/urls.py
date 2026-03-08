@@ -37,4 +37,11 @@ urlpatterns = [
     path("billing/", views.customer_portal, name="customer_portal"),
     path("contact/", views.contact, name="contact"),
 
+    # Stripe
+    path(
+    "create-checkout-session/",
+    views.create_checkout_session,
+    name="create-checkout-session",
+),
+
 ]

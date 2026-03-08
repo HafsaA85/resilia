@@ -1,6 +1,58 @@
-<h2>Start Your 3-Day Free Trial</h2>
+{% extends "base.html" %}
 
-<a href="https://buy.stripe.com/fZu14n3Km7Dx5z4ffp6Vq00"
-   class="btn btn-primary">
-   Start Free Trial
+{% block title %}Upgrade | Resilia{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">Start Your 3-Day Free Trial</h1>
+        <p class="lead text-muted">
+            Your private space to understand emotional triggers,
+            reflect gently, and build resilience in everyday life.
+        </p>
+    </div>
+ <div class="row justify-content-center">
+
+        <div class="col-md-6 col-lg-5">
+
+            <div class="card shadow-lg border-0 p-4">
+
+                <h4 class="text-center mb-3">Resilia Premium</h4>
+
+                <ul class="list-unstyled mb-4">
+
+                    <li class="mb-2">✔ Track emotional triggers</li>
+                    <li class="mb-2">✔ Guided journaling</li>
+                    <li class="mb-2">✔ CBT-based exercises</li>
+                    <li class="mb-2">✔ Personal emotional insights</li>
+                    <li class="mb-2">✔ Weekly reflection prompts</li>
+
+                </ul>
+                
+<div class="text-center mb-3">
+                    <h2 class="fw-bold">£9 / month</h2>
+                    <p class="text-muted">First 3 days free</p>
+                </div>
+
+                <div class="d-grid">
+
+<a href="{% url 'resilia:create-checkout-session' %}" class="btn">
+    Start Free Trial
 </a>
+</div>
+
+                <p class="text-muted text-center mt-3 small">
+                    Cancel anytime. No commitment.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

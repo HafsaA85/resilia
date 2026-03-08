@@ -44,11 +44,11 @@ ALLOWED_HOSTS = os.getenv(
     "127.0.0.1,localhost,.onrender.com"
 ).split(",")
 
-STRIPE_PUBLIC_KEY = "your_public_key"
-STRIPE_SECRET_KEY = "your_secret_key"
+STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATICFILES_STORAGE = "sk_test_51SpUrvFT8cf21M5WPqQ2KxRdM1ot00vHLIUJmlJYQ2S0tx0lqHsUI0C8jLV4TvHnRO6beZwmWxn0n2B8bL2VWKOh00CCmeQpMN"
 
 # Application definition
 
@@ -146,7 +146,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Redirects after login / logout
 LOGIN_REDIRECT_URL = "/tracker/"   # after login
-LOGIN_URL = "/register/"             # where @login_required sends users
+LOGIN_URL = "/login/"             # where @login_required sends users
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
@@ -157,7 +157,7 @@ EMAIL_USE_TLS = False
 
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Active | Resilia{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+
+    <h2 class="mb-3">🎉 Your subscription is active</h2>
+
+    <p class="text-muted mb-4">
+        Your Resilia trial has started successfully.
+        You now have full access to all premium features.
+    </p>
+
+    <a href="{% url 'resilia:tracker_list' %}" class="btn btn-primary">
+        Go to My Tracker
+    </a>
+
+</div>
+{% endblock %}

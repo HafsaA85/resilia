@@ -17,6 +17,26 @@ from django.conf import settings
 from .utils import get_user_cbt_recommendations
 from .models import CBTExercise
 
+# =========================
+# PREMIUM DECORATOR
+# =========================
+def premium_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+
+        if not request.user.is_authenticated:
+            return redirect("resilia:login")
+
+        # allow admin access for testing
+        if request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
+
+        if not hasattr(request.user, "subscription") or not request.user.subscription.is_active:
+            return redirect("resilia:upgrade")
+
+        return view_func(request, *args, **kwargs)
+
+    return wrapper
 
 def contact(request):
     if request.method == "POST":
@@ -210,7 +230,7 @@ def login_view(request):
     else:
         form = AuthenticationForm()
 
-    return render(request, "registration/login.html", {"form": form})
+    return render(request, "login.html", {"form": form})
 
 
 def logout_view(request):
@@ -222,12 +242,15 @@ def logout_view(request):
 # ANXIETY TRIGGERS
 # =========================
 @login_required
+@premium_required
 def tracker_list(request):
+    
     triggers = AnxietyTrigger.objects.filter(user=request.user)
     return render(request, "tracker_list.html", {"triggers": triggers})
 
 
 @login_required
+@premium_required
 def tracker_create(request):
     if request.method == "POST":
         form = AnxietyTriggerForm(request.POST)
@@ -255,6 +278,7 @@ def tracker_create(request):
 
 
 @login_required
+@premium_required
 def tracker_update(request, pk):
     trigger = get_object_or_404(AnxietyTrigger, pk=pk, user=request.user)
 
@@ -273,12 +297,14 @@ def tracker_update(request, pk):
 # JOURNAL
 # =========================
 @login_required
+@premium_required
 def journal_list(request):
     entries = JournalEntry.objects.filter(user=request.user)
     return render(request, "journal/list.html", {"entries": entries})
 
 
 @login_required
+@premium_required
 def journal_create(request, trigger_id=None):
     trigger = None
     if trigger_id:
@@ -315,6 +341,7 @@ def journal_create(request, trigger_id=None):
 
 
 @login_required
+@premium_required
 def journal_edit(request, pk):
     entry = get_object_or_404(JournalEntry, pk=pk, user=request.user)
 
@@ -330,6 +357,7 @@ def journal_edit(request, pk):
 
 
 @login_required
+@premium_required
 def journal_delete(request, pk):
     entry = get_object_or_404(JournalEntry, pk=pk, user=request.user)
 
@@ -358,22 +386,6 @@ def customer_portal(request):
     return redirect(session.url)
 
 
-# =========================
-# PREMIUM DECORATOR
-# =========================
-def premium_required(view_func):
-    @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect("resilia:login")
-
-        if not hasattr(request.user, "subscription") or not request.user.subscription.is_active:
-            return redirect("resilia:upgrade")
-
-        return view_func(request, *args, **kwargs)
-
-    return wrapper
-
 
 # =========================
 # SUBSCRIPTION PAGES
@@ -390,6 +402,7 @@ def subscription_cancel(request):
     return render(request, "subscription_cancel.html")
 
 @login_required
+@premium_required
 def tracker_list(request):
     triggers = AnxietyTrigger.objects.filter(user=request.user)
     exercises = get_user_cbt_recommendations(request.user)
@@ -403,6 +416,49 @@ def tracker_list(request):
         },
     )
 
+@login_required
+@premium_required
 def exercise_detail(request, pk):
     exercise = get_object_or_404(CBTExercise, pk=pk)
     return render(request, "exercise_detail.html", {"exercise": exercise})
+
+@login_required
+def create_checkout_session(request):
+    import stripe
+    from django.conf import settings
+
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    session = stripe.checkout.Session.create(
+        mode="subscription",
+        payment_method_types=["card"],
+        line_items=[{
+            "price": "prod_U3hcQS6mJSQCBH",  # replace with your TEST price
+            "quantity": 1,
+        }],
+        success_url="http://127.0.0.1:8000/subscription-success/",
+        cancel_url="http://127.0.0.1:8000/upgrade/",
+    )
+
+    return redirect(session.url)
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
+@login_required
+def create_checkout_session(request):
+    email = request.user.email or "customer@example.com"
+
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        mode="subscription",
+        customer_email=email,
+        line_items=[{
+            "price": "price_1T5aD3FT8cf21M5WNz1g1INe",  # from Stripe
+            "quantity": 1,
+        }],
+        success_url="http://127.0.0.1:8000/success/",
+        cancel_url="http://127.0.0.1:8000/upgrade/",
+    )
+
+    return redirect(session.url)
