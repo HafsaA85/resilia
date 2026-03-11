@@ -71,6 +71,10 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://noor-for-her.onrender.com",
+]
+
 ROOT_URLCONF = 'resilia_project.urls'
 
 TEMPLATES = [
