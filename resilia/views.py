@@ -429,7 +429,8 @@ def create_checkout_session(request):
         subscription_data={
             "trial_period_days": 3
         },
-        success_url=domain_url + "subscription-success/?session_id={CHECKOUT_SESSION_ID}",
+        
+        success_url=domain_url + "success/?session_id={CHECKOUT_SESSION_ID}",
         cancel_url=domain_url + "upgrade/",
     )
 
