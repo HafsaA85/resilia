@@ -17,6 +17,7 @@ from django.conf import settings
 from .utils import get_user_cbt_recommendations
 from .models import CBTExercise
 
+
 # =========================
 # PREMIUM DECORATOR
 # =========================
@@ -368,38 +369,6 @@ def journal_delete(request, pk):
     return render(request, "journal/confirm_delete.html", {"entry": entry})
 
 
-# =========================
-# STRIPE CUSTOMER PORTAL
-# =========================
-@login_required
-def customer_portal(request):
-    try:
-        subscription = Subscription.objects.get(user=request.user)
-    except Subscription.DoesNotExist:
-        return redirect("resilia:upgrade")
-
-    session = stripe.billing_portal.Session.create(
-        customer=subscription.stripe_customer_id,
-        return_url="http://127.0.0.1:8000/",
-    )
-
-    return redirect(session.url)
-
-
-
-# =========================
-# SUBSCRIPTION PAGES
-# =========================
-def upgrade(request):
-    return render(request, "upgrade.html")
-
-
-def subscription_success(request):
-    return render(request, "subscription_success.html")
-
-
-def subscription_cancel(request):
-    return render(request, "subscription_cancel.html")
 
 @login_required
 @premium_required
@@ -422,31 +391,31 @@ def exercise_detail(request, pk):
     exercise = get_object_or_404(CBTExercise, pk=pk)
     return render(request, "exercise_detail.html", {"exercise": exercise})
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
+# =========================
+# STRIPE CUSTOMER PORTAL
+# =========================
 @login_required
-def create_checkout_session(request):
-    import stripe
-    from django.conf import settings
+def customer_portal(request):
+    try:
+        subscription = Subscription.objects.get(user=request.user)
+    except Subscription.DoesNotExist:
+        return redirect("resilia:upgrade")
 
-    stripe.api_key = settings.STRIPE_SECRET_KEY
+    domain_url = request.build_absolute_uri("/")
 
-    session = stripe.checkout.Session.create(
-        mode="subscription",
-        payment_method_types=["card"],
-        line_items=[{
-            "price": "prod_U3hcQS6mJSQCBH",  # replace with your TEST price
-            "quantity": 1,
-        }],
-        success_url="http://127.0.0.1:8000/subscription-success/",
-        cancel_url="http://127.0.0.1:8000/upgrade/",
+    session = stripe.billing_portal.Session.create(
+        customer=subscription.stripe_customer_id,
+        return_url=domain_url,
     )
 
     return redirect(session.url)
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
-
 
 @login_required
 def create_checkout_session(request):
+
+    domain_url = request.build_absolute_uri('/')
     email = request.user.email or "customer@example.com"
 
     session = stripe.checkout.Session.create(
@@ -454,11 +423,25 @@ def create_checkout_session(request):
         mode="subscription",
         customer_email=email,
         line_items=[{
-            "price": "price_1T5aD3FT8cf21M5WNz1g1INe",  # from Stripe
+            "price": "price_1T5aD3FT8cf21M5WNz1g1INe",
             "quantity": 1,
         }],
-        success_url="http://127.0.0.1:8000/success/",
-        cancel_url="http://127.0.0.1:8000/upgrade/",
+        subscription_data={
+            "trial_period_days": 3
+        },
+        success_url=domain_url + "subscription-success/?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url=domain_url + "upgrade/",
     )
 
     return redirect(session.url)
+
+
+def subscription_success(request):
+    return render(request, "subscription_success.html")
+
+
+def upgrade(request):
+    return render(request, "upgrade.html")
+
+def subscription_cancel(request):
+    return render(request, "subscription_cancel.html")

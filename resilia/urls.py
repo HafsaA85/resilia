@@ -18,6 +18,7 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
 
     # Subscription
+    path('create-checkout-session/', views.create_checkout_session, name='checkout'),
     path("upgrade/", views.upgrade, name="upgrade"),
     path("success/", views.subscription_success, name="subscription_success"),
     path("cancel/", views.subscription_cancel, name="subscription_cancel"),
