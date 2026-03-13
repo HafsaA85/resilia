@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
@@ -16,7 +17,29 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .utils import get_user_cbt_recommendations
 from .models import CBTExercise
+from django.views.decorators.csrf import csrf_exempt
+import json
 
+@csrf_exempt
+def submit_lead(request):
+
+    if request.method == "POST":
+
+        data = json.loads(request.body)
+
+        lead = OrganisationLead.objects.create(
+            organisation_name=data.get("organisation_name"),
+            contact_name=data.get("contact_name"),
+            email=data.get("email"),
+            role=data.get("role"),
+            organisation_type=data.get("organisation_type"),
+            organisation_size=data.get("organisation_size"),
+            message=data.get("message"),
+        )
+
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False})
 
 # =========================
 # PREMIUM DECORATOR

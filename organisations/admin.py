@@ -5,7 +5,7 @@ from datetime import timedelta
 from django.contrib.auth.models import Permission
 
 from .models import Organisation, OrganisationMembership, OrganisationLicense, Invoice
-
+from resilia_project.services.ai_marketing import generate_outreach_email
 
 # ---------- Helper ----------
 def get_user_membership(user):

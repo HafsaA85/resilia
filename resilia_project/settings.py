@@ -58,7 +58,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "resilia",
     "organisations",
+    "corsheaders",
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -69,6 +74,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
