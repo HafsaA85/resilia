@@ -102,7 +102,7 @@ class OrganisationLead(models.Model):
     email = models.EmailField()
     role = models.CharField(max_length=100, blank=True)
     organisation_type = models.CharField(max_length=100, blank=True)
-    organisation_size = models.CharField(max_length=50, blank=True)
+    organisation_size = models.CharField(max_length=50, blank=True, null=True)
 
     message = models.TextField(blank=True)
     notes = models.TextField(blank=True)
