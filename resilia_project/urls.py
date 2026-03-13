@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth.views import LoginView, LogoutView
+from resilia.views import submit_lead
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -13,5 +14,6 @@ urlpatterns = [
 
     # your app
     path("", include("resilia.urls")),
+    path("api/lead/", submit_lead, name="submit_lead"),
     
 ]
