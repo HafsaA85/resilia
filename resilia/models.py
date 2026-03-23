@@ -100,9 +100,13 @@ class OrganisationLead(models.Model):
     organisation_name = models.CharField(max_length=150)
     contact_name = models.CharField(max_length=100)
     email = models.EmailField()
+
     role = models.CharField(max_length=100, blank=True)
     organisation_type = models.CharField(max_length=100, blank=True)
-    organisation_size = models.CharField(max_length=50, blank=True, null=True)
+    organisation_size = models.CharField(max_length=50, blank=True)
+    phase = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True, default="UK")
 
     message = models.TextField(blank=True)
     notes = models.TextField(blank=True)

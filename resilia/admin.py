@@ -37,6 +37,8 @@ class OrganisationLeadAdmin(admin.ModelAdmin):
         "email",
         "organisation_type",
         "organisation_size",
+        "city",
+        "country",
         "status",
         "created_at",
     )
@@ -44,6 +46,7 @@ class OrganisationLeadAdmin(admin.ModelAdmin):
     list_filter = (
         "status",
         "organisation_type",
+        "city",
         "created_at",
     )
 
@@ -62,6 +65,8 @@ class OrganisationLeadAdmin(admin.ModelAdmin):
                 "organisation_name",
                 "organisation_type",
                 "organisation_size",
+                "city",
+                "country",
             )
         }),
         ("Contact", {
