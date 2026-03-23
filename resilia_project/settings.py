@@ -41,7 +41,7 @@ DEBUG = os.getenv("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
-    "127.0.0.1,localhost,.onrender.com, app.resilia.co.uk"
+    "127.0.0.1,localhost,.onrender.com,app.resilia.co.uk"
 ).split(",")
 
 STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY")
