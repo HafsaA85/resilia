@@ -4,8 +4,13 @@ from .models import OrganisationLead
 import csv
 from django.http import HttpResponse
 from .models import CBTExercise
+from .models import AccessCode
 
 
+@admin.register(AccessCode)
+class AccessCodeAdmin(admin.ModelAdmin):
+    list_display = ("code", "is_active", "max_uses", "used_count")
+    
 @admin.register(AnxietyTrigger)
 class AnxietyTriggerAdmin(admin.ModelAdmin):
     list_display = ("user", "situation", "intensity", "created_at")

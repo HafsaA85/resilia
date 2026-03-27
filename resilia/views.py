@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.db.models import Avg, Count
 from django.conf import settings
 from functools import wraps
-from .models import AnxietyTrigger, JournalEntry, Subscription, OrganisationLead
+from .models import AnxietyTrigger, JournalEntry, Subscription, OrganisationLead, AccessCode
 from .forms import AnxietyTriggerForm, JournalEntryForm
 import stripe
 from .forms import OrganisationContactForm
@@ -51,16 +51,20 @@ def premium_required(view_func):
         if not request.user.is_authenticated:
             return redirect("resilia:login")
 
-        # allow admin access for testing
+        # allow admin access
         if request.user.is_superuser:
             return view_func(request, *args, **kwargs)
 
-        if not hasattr(request.user, "subscription") or not request.user.subscription.is_active:
-            return redirect("resilia:upgrade")
+        subscription = getattr(request.user, "subscription", None)
+
+        # ✅ allow BOTH paid + free users
+        if not subscription or not (subscription.is_active or subscription.free_access):
+            return redirect("resilia:enter_code")
 
         return view_func(request, *args, **kwargs)
 
     return wrapper
+
 
 def contact(request):
     if request.method == "POST":
@@ -229,11 +233,17 @@ def privacy_policy(request):
 # =========================
 # AUTH
 # =========================
+from .models import Subscription  # 👈 make sure this is at the top
+
 def register(request):
     if request.method == "POST":
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+
+            # ✅ CREATE subscription automatically
+            Subscription.objects.create(user=user)
+
             login(request, user)
             return redirect("resilia:home")
     else:
@@ -265,13 +275,6 @@ def logout_view(request):
 # =========================
 # ANXIETY TRIGGERS
 # =========================
-@login_required
-@premium_required
-def tracker_list(request):
-    
-    triggers = AnxietyTrigger.objects.filter(user=request.user)
-    return render(request, "tracker_list.html", {"triggers": triggers})
-
 
 @login_required
 @premium_required
@@ -459,6 +462,40 @@ def create_checkout_session(request):
 
     return redirect(session.url)
 
+@login_required
+def enter_access_code(request):
+    if request.method == "POST":
+        code_input = request.POST.get("code")
+
+        try:
+            access_code = AccessCode.objects.get(code=code_input)
+
+            if not access_code.is_active:
+                messages.error(request, "This code is no longer active.")
+                return redirect('enter_code')
+
+            if access_code.used_count >= access_code.max_uses:
+                messages.error(request, "This code has reached its limit.")
+                return redirect('enter_code')
+
+            # ✅ Get or create subscription
+            subscription, created = Subscription.objects.get_or_create(user=request.user)
+
+            # ✅ Grant free access
+            subscription.free_access = True
+            subscription.save()
+
+            # ✅ Update usage
+            access_code.used_count += 1
+            access_code.save()
+
+            messages.success(request, "Access unlocked 🎉")
+            return redirect('resilia:home')
+
+        except AccessCode.DoesNotExist:
+            messages.error(request, "Invalid code.")
+
+    return render(request, "enter_code.html")
 
 def subscription_success(request):
     return render(request, "subscription_success.html")
@@ -469,3 +506,4 @@ def upgrade(request):
 
 def subscription_cancel(request):
     return render(request, "subscription_cancel.html")
+

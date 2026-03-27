@@ -10,6 +10,7 @@ class Subscription(models.Model):
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
     stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=False)
+    free_access = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -144,3 +145,16 @@ class CBTExercise(models.Model):
 
     def __str__(self):
         return self.title
+
+# =========================
+# Free Access Code
+# =========================
+
+class AccessCode(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    is_active = models.BooleanField(default=True)
+    max_uses = models.IntegerField(default=100)
+    used_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.code
