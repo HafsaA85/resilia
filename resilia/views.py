@@ -455,7 +455,7 @@ def create_checkout_session(request):
         customer_email=request.user.email,
         allow_promotion_codes=True,
         line_items=[{
-            "price": "price_1T5aD3FT8cf21M5WNz1g1INe",
+            "price": "price_1Szn42FT8cf21M5WpK8rHELs",
             "quantity": 1,
         }],
         subscription_data={"trial_period_days": 7},
