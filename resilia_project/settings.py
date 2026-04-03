@@ -37,7 +37,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key-for-dev-only")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True") == "True"
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
