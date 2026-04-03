@@ -7,10 +7,11 @@
     --accent: #F2E9E4;
 }
 
-body {
-    font-family: 'Segoe UI', Roboto, sans-serif;
+body, h1, h2, h3, h4, h5, h6, p, li, a, span {
+    font-family: 'Segoe UI', Roboto, sans-serif !important;
     background-color: var(--bg);
     color: var(--text-dark);
+
 }
 
 nav.navbar.noor-navbar {
@@ -47,10 +48,7 @@ h1, h2, h3 {
 }
 
 /* Buttons */
-.btn-primary {
-    background-color: var(--primary) !important;
-    border-color: var(--primary) !important;
-}
+
 
 /* Navbar tweaks */
 .nav-link {
@@ -63,38 +61,45 @@ h1, h2, h3 {
 /* Calm card style for forms & tracker */
 .card {
     border-radius: 16px;
-    background-color: var(--accent);
-}
-
-.card {
-    border-radius: 16px;
+    background-color: #ffffff; /* cleaner */
+    border: 1px solid #eee;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
     transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
 button.btn {
     border-radius: 10px;
 }
 
-.form-group label {
+
+
+.form-label {
     font-weight: 600;
     font-size: 0.9rem;
-    margin-bottom: 4px;
-    color: #4b465c;
-    display: inline-block;
+    margin-bottom: 6px;
+    color: var(--text-dark);
 }
 
-.form-group textarea,
-.form-group input,
-.form-group select {
-    border-radius: 12px;
-    border: 1px solid #d8d3e3;
-    padding: 0.7rem 0.9rem;
-    width: 100%;
-    background: #fff;
+.form-control {
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    border-color: var(--primary);
+}
+
+.btn-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    border-radius: 999px;
+    padding: 10px 16px;
 }
 
 .insight-card {

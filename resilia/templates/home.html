@@ -6,18 +6,54 @@
  HERO
 ========================= -->
 <div class="text-center p-5">
+    {% if user.is_authenticated %}
+
+    {% if user.date_joined|timesince < "1 day" %}
+        <h1 class="mb-4">
+            Welcome to Resilia
+        </h1>
+
+        {% if show_upgrade_prompt %}
+<div class="alert alert-warning text-center">
+    Your free trial is ending soon. You’ll be charged automatically unless you cancel.
+</div>
+{% endif %}
+
+        <p class="lead mb-5">
+            You’ve taken a powerful first step. This is your space to gently understand and support your mind.
+        </p>
+
+    {% else %}
+        <h1 class="mb-4">
+            Welcome back, {{ user.first_name|default:user.username }} 
+        </h1>
+
+        <p class="lead mb-5">
+            This is your space to pause, reflect, and gently understand what’s on your mind today.
+        </p>
+    {% endif %}
+
+{% else %}
+
     <h1 class="mb-4">Welcome to Resilia</h1>
 
     <p class="lead mb-5">
         Your private space to understand emotional triggers, reflect gently,
-        and build steady resilience in everyday life and work.
+        and build steady resilience in everyday life.
     </p>
 
-    <a href="{% url 'resilia:upgrade' %}" class="btn btn-primary btn-lg">
-    Start Your Journey
-</a>
-</div>
+{% endif %}
 
+    {% if has_access %}
+    <a href="{% url 'resilia:tracker_list' %}" class="btn btn-primary btn-lg">
+        Continue Your Journey
+    </a>
+{% else %}
+    <a href="{% url 'resilia:upgrade' %}" class="btn btn-primary btn-lg">
+        Unlock Full Access
+    </a>
+{% endif %}
+</div>
 
 {% if user.is_authenticated %}
 
@@ -26,15 +62,33 @@
 ========================= -->
 <div class="container mb-4 text-center">
     <div class="d-flex justify-content-center gap-3 flex-wrap">
-        <a href="{% url 'resilia:tracker_list' %}"
-           class="btn btn-outline-secondary btn-lg px-4">
-            🧠 Anxiety Triggers
-        </a>
 
-        <a href="{% url 'resilia:journal_create' %}"
-           class="btn btn-primary btn-lg px-4">
-            ✍️ Journal
-        </a>
+        {% if has_access %}
+            
+            <a href="{% url 'resilia:tracker_list' %}"
+               class="btn btn-primary btn-lg px-4">
+                Anxiety Triggers
+            </a>
+
+            <a href="{% url 'resilia:journal_create' %}"
+               class="btn btn-primary btn-lg px-4">
+                Journal
+            </a>
+
+        {% else %}
+
+            <a href="{% url 'resilia:upgrade' %}"
+               class="btn btn-primary btn-lg px-4">
+                Anxiety Triggers
+            </a>
+
+            <a href="{% url 'resilia:upgrade' %}"
+               class="btn btn-primary btn-lg px-4">
+                Journal
+            </a>
+
+        {% endif %}
+
     </div>
 
     <p class="text-muted mt-2" style="font-size: 0.9rem;">
@@ -42,16 +96,15 @@
     </p>
 
     <!-- =========================
-    VISUAL STREAK (LAST 7 DAYS)
+    VISUAL STREAK
     ========================= -->
     <div class="mt-3">
         <div class="d-flex justify-content-center gap-2">
             {% for day in last_7_days %}
                 <div
-    title="{{ day }}"
-    class="streak-day {% if day in journal_days %}streak-active{% else %}streak-empty{% endif %}">
-</div>
-
+                    title="{{ day }}"
+                    class="streak-day {% if day in journal_days %}streak-active{% else %}streak-empty{% endif %}">
+                </div>
             {% endfor %}
         </div>
 
@@ -90,7 +143,6 @@
 <div class="container pb-5">
     <div class="row g-3">
 
-        <!-- Average anxiety -->
         <div class="col-md-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
@@ -112,7 +164,6 @@
             </div>
         </div>
 
-        <!-- High anxiety -->
         <div class="col-md-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
@@ -124,7 +175,6 @@
             </div>
         </div>
 
-        <!-- Last 7 days -->
         <div class="col-md-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
@@ -166,49 +216,41 @@
             </div>
         </div>
     </div>
-    <!-- =========================
- DIGITAL COACH
-========================= -->
-{% if coaching_message %}
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card shadow-sm border-0" style="background-color: #f7f3f0;">
-            <div class="card-body">
 
-                <h5 class="card-title mb-3">🌿 Your Personal Insight</h5>
-                <p class="mb-4" style="font-size: 1rem;">
-                    {{ coaching_message }}
-                </p>
+    <!-- DIGITAL COACH -->
+    {% if coaching_message %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0" style="background-color: #f7f3f0;">
+                <div class="card-body">
 
-                <hr>
+                    <h5 class="card-title mb-3">🌿 Your Personal Insight</h5>
+                    <p class="mb-4">{{ coaching_message }}</p>
 
-                <h6 class="mt-3">
-                    This Week’s Focus:
-                    <strong>{{ weekly_focus }}</strong>
-                </h6>
+                    <hr>
 
-                <p class="mt-3 mb-2">
-                    <strong>Tiny Step:</strong><br>
-                    {{ tiny_challenge }}
-                </p>
+                    <h6>This Week’s Focus: <strong>{{ weekly_focus }}</strong></h6>
 
-                <p class="mb-0">
-                    <strong>Reflect:</strong><br>
-                    {{ reflection_prompt }}
-                </p>
+                    <p class="mt-3 mb-2">
+                        <strong>Tiny Step:</strong><br>
+                        {{ tiny_challenge }}
+                    </p>
 
+                    <p class="mb-0">
+                        <strong>Reflect:</strong><br>
+                        {{ reflection_prompt }}
+                    </p>
+
+                </div>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
+    {% endif %}
 
 </div>
 
 {% else %}
-<!-- =========================
- NO INSIGHTS YET
-========================= -->
+<!-- NO INSIGHTS -->
 <div class="container pb-5">
     <div class="card shadow-sm">
         <div class="card-body text-center">
@@ -227,4 +269,5 @@
 {% endif %}
 
 {% endif %}
+
 {% endblock %}

@@ -5,6 +5,11 @@ import csv
 from django.http import HttpResponse
 from .models import CBTExercise
 from .models import AccessCode
+from .models import Subscription
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ("user", "is_active", "trial_start", "stripe_customer_id")
 
 
 @admin.register(AccessCode)

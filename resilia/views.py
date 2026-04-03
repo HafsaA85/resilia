@@ -9,27 +9,30 @@ from datetime import timedelta
 from django.db.models import Avg, Count
 from django.conf import settings
 from functools import wraps
-from .models import AnxietyTrigger, JournalEntry, Subscription, OrganisationLead, AccessCode
-from .forms import AnxietyTriggerForm, JournalEntryForm
-import stripe
-from .forms import OrganisationContactForm
+from .models import AnxietyTrigger, JournalEntry, Subscription, OrganisationLead, CBTExercise
+from .forms import AnxietyTriggerForm, JournalEntryForm, OrganisationContactForm
 from django.core.mail import send_mail
-from django.conf import settings
 from .utils import get_user_cbt_recommendations
-from .models import CBTExercise
 from django.views.decorators.csrf import csrf_exempt
+import stripe
 import json
+from .forms import UserRegisterForm
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
+# =========================
+# SUBMIT LEAD
+# =========================
 @csrf_exempt
 def submit_lead(request):
-
     if request.method == "POST":
-
         data = json.loads(request.body)
 
-        lead = OrganisationLead.objects.create(
+        OrganisationLead.objects.create(
             organisation_name=data.get("organisation_name"),
             contact_name=data.get("contact_name"),
+            phone=data.get("phone"),
             email=data.get("email"),
             role=data.get("role"),
             organisation_type=data.get("organisation_type"),
@@ -41,9 +44,7 @@ def submit_lead(request):
 
     return JsonResponse({"success": False})
 
-# =========================
-# PREMIUM DECORATOR
-# =========================
+
 def premium_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
@@ -51,62 +52,84 @@ def premium_required(view_func):
         if not request.user.is_authenticated:
             return redirect("resilia:login")
 
-        # allow admin access
         if request.user.is_superuser:
             return view_func(request, *args, **kwargs)
 
-        subscription = getattr(request.user, "subscription", None)
+        try:
+            sub = Subscription.objects.get(user=request.user)
+        except Subscription.DoesNotExist:
+            return redirect("resilia:upgrade")
 
-        # ✅ allow BOTH paid + free users
-        if not subscription or not (subscription.is_active or subscription.free_access):
-            return redirect("resilia:enter_code")
+        if not sub.stripe_customer_id:
+            return redirect("resilia:upgrade")
 
-        return view_func(request, *args, **kwargs)
+        try:
+            subscriptions = stripe.Subscription.list(
+                customer=sub.stripe_customer_id,
+                status="all",
+                limit=1
+            )
+
+            if subscriptions.data:
+                stripe_sub = subscriptions.data[0]
+
+                # ❌ BLOCK IF CANCELLED
+                if stripe_sub.cancel_at_period_end:
+                    return redirect("resilia:upgrade")
+
+                # ✅ ALLOW ONLY ACTIVE OR TRIAL
+                if stripe_sub.status in ["active", "trialing"]:
+                    return view_func(request, *args, **kwargs)
+
+        except Exception as e:
+            print("Stripe error:", e)
+
+        return redirect("resilia:upgrade")
 
     return wrapper
-
-
+    
+    
+# =========================
+# CONTACT
+# =========================
 def contact(request):
     if request.method == "POST":
-        form = OrganisationContactForm(request.POST)
-        if form.is_valid():
+        name = request.POST.get("name")
+        email = request.POST.get("email")
+        phone = request.POST.get("phone")
+        message = request.POST.get("message")
 
-            # ✅ Save lead
-            OrganisationLead.objects.create(
-                organisation_name=form.cleaned_data["organisation_name"],
-                contact_name=form.cleaned_data["contact_name"],
-                email=form.cleaned_data["email"],
-                role=form.cleaned_data.get("role", ""),
-                organisation_type=form.cleaned_data.get("organisation_type", ""),
-                message=form.cleaned_data.get("message", ""),
-            )
+        OrganisationLead.objects.create(
+            contact_name=name,
+            email=email,
+            phone=phone,
+            message=message,
+        )
 
-            # ✅ SEND EMAIL HERE
-            send_mail(
-                subject="New Resilia Organisation Enquiry",
-                message=f"""
-New organisation enquiry received:
+        send_mail(
+            subject="New Coaching Request",
+            message=f"""
+New coaching request received:
 
-Organisation: {form.cleaned_data['organisation_name']}
-Contact: {form.cleaned_data['contact_name']}
-Email: {form.cleaned_data['email']}
-Type: {form.cleaned_data.get('organisation_type','')}
-Message: {form.cleaned_data.get('message','')}
+Name: {name}
+Email: {email}
+Phone: {phone}
+
+Message:
+{message}
 """,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[settings.DEFAULT_FROM_EMAIL],
-            )
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.DEFAULT_FROM_EMAIL],
+        )
 
-            messages.success(request, "Thank you. We will contact you shortly.")
-            return redirect("contact")
+        return redirect("resilia:contact_success")
 
-    else:
-        form = OrganisationContactForm()
-
-    return render(request, "contact.html", {"form": form})
+    return render(request, "contact.html")
 
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
+def contact_success(request):
+    return render(request, "contact_success.html")
+
 
 print("✅ resilia.views loaded")
 
@@ -135,58 +158,49 @@ def home(request):
         else:
             break
 
-    insights = None
-    trend = None
+    # =========================
+    # ACCESS CONTROL + STRIPE TRIAL
+    # =========================
+    has_access = False
+    trial_days_left = None
+    show_upgrade_prompt = False
 
-    coaching_message = None
-    weekly_focus = None
-    tiny_challenge = None
-    reflection_prompt = None
+    try:
+        sub = Subscription.objects.get(user=request.user)
 
-    if triggers.exists():
-        avg_intensity = triggers.aggregate(avg=Avg("intensity"))["avg"]
-        high_intensity_count = triggers.filter(intensity__gte=7).count()
-
-        insights = {
-            "avg_intensity": round(avg_intensity, 1) if avg_intensity else 0,
-            "high_intensity_count": high_intensity_count,
-            "entries_last_7": triggers.filter(
-                created_at__date__gte=today - timedelta(days=6)
-            ).count(),
-            "top_triggers": (
-                triggers.values("situation")
-                .annotate(count=Count("id"))
-                .order_by("-count")[:3]
-            ),
-        }
-
-        # -------- Digital Emotional Coach Logic --------
-        if avg_intensity and avg_intensity >= 7:
-            coaching_message = (
-                "Your nervous system has been under pressure lately. "
-                "This week is about slowing down."
+        if sub.stripe_customer_id:
+            subscriptions = stripe.Subscription.list(
+                customer=sub.stripe_customer_id,
+                status="all",
+                limit=1
             )
-            weekly_focus = "Nervous System Regulation"
-            tiny_challenge = "Take 3 slow breaths before responding to stress."
-            reflection_prompt = "What makes it difficult for you to pause?"
 
-        elif high_intensity_count >= 3:
-            coaching_message = (
-                "You've experienced several high-intensity moments. "
-                "A pattern may be forming."
-            )
-            weekly_focus = "Pattern Awareness"
-            tiny_challenge = "Notice when anxiety rises and name the trigger."
-            reflection_prompt = "What situations repeat most often?"
+            if subscriptions.data:
+                stripe_sub = subscriptions.data[0]
 
-        else:
-            coaching_message = (
-                "You are building awareness. Small reflections create powerful change."
-            )
-            weekly_focus = "Gentle Growth"
-            tiny_challenge = "Journal once this week without judging your thoughts."
-            reflection_prompt = "What are you proud of handling recently?"
+                # ✅ ACCESS
+                if stripe_sub.status in ["active", "trialing"]:
+                    has_access = True
 
+                # 🟡 TRIAL INFO
+                if stripe_sub.status == "trialing":
+                    trial_end = timezone.datetime.fromtimestamp(
+                        stripe_sub.trial_end,
+                        tz=timezone.utc
+                    )
+
+                    remaining = trial_end - timezone.now()
+                    trial_days_left = max(remaining.days, 0)
+
+                    if trial_days_left <= 2:
+                        show_upgrade_prompt = True
+
+    except Exception as e:
+        print("Stripe trial error:", e)
+
+    # =========================
+    # OPTIONAL CONTENT
+    # =========================
     affirmation = (
         "You are allowed to go gently. Healing does not rush."
         if journal_entries.exists()
@@ -201,15 +215,11 @@ def home(request):
             "journal_days": journal_days,
             "streak": streak,
             "affirmation": affirmation,
-            "insights": insights,
-            "trend": trend,
-            "coaching_message": coaching_message,
-            "weekly_focus": weekly_focus,
-            "tiny_challenge": tiny_challenge,
-            "reflection_prompt": reflection_prompt,
+            "trial_days_left": trial_days_left,
+            "show_upgrade_prompt": show_upgrade_prompt,
+            "has_access": has_access,
         },
     )
-
 
 # =========================
 # STATIC PAGES
@@ -233,21 +243,16 @@ def privacy_policy(request):
 # =========================
 # AUTH
 # =========================
-from .models import Subscription  # 👈 make sure this is at the top
-
 def register(request):
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = UserRegisterForm(request.POST)  
         if form.is_valid():
             user = form.save()
-
-            # ✅ CREATE subscription automatically
             Subscription.objects.create(user=user)
-
             login(request, user)
             return redirect("resilia:home")
     else:
-        form = UserCreationForm()
+        form = UserRegisterForm()
 
     return render(request, "register.html", {"form": form})
 
@@ -256,8 +261,8 @@ def login_view(request):
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            user = form.get_user()
-            login(request, user)
+            login(request, form.get_user())
+            
             return redirect("resilia:home")
 
         messages.error(request, "Invalid username or password.")
@@ -273,8 +278,23 @@ def logout_view(request):
 
 
 # =========================
-# ANXIETY TRIGGERS
+# TRACKER
 # =========================
+@login_required
+@premium_required
+def tracker_list(request):
+    triggers = AnxietyTrigger.objects.filter(user=request.user)
+    exercises = get_user_cbt_recommendations(request.user)
+
+    return render(
+        request,
+        "tracker_list.html",
+        {
+            "triggers": triggers,
+            "exercises": exercises,
+        },
+    )
+
 
 @login_required
 @premium_required
@@ -287,15 +307,10 @@ def tracker_create(request):
             trigger.save()
 
             if trigger.intensity >= 8:
-             messages.info(
-        request,
-        "That sounds really intense. "
-        "You don’t have to solve anything right now. "
-        "Just come back to your breath. "
-        "One inhale. One exhale. "
-        "You are safe in this moment."
-    )
-
+                messages.info(
+                    request,
+                    "That sounds really intense. You don’t have to solve anything right now. Just breathe."
+                )
 
             return redirect("resilia:tracker_list")
     else:
@@ -319,21 +334,23 @@ def tracker_update(request, pk):
 
     return render(request, "tracker_form.html", {"form": form, "update": True})
 
+@login_required
+@premium_required
+def exercise_detail(request, pk):
+    exercise = get_object_or_404(CBTExercise, pk=pk)
+    return render(request, "exercise_detail.html", {"exercise": exercise})
 
-# =========================
-# JOURNAL
-# =========================
 @login_required
 @premium_required
 def journal_list(request):
     entries = JournalEntry.objects.filter(user=request.user)
     return render(request, "journal/list.html", {"entries": entries})
 
-
 @login_required
 @premium_required
 def journal_create(request, trigger_id=None):
     trigger = None
+
     if trigger_id:
         trigger = get_object_or_404(
             AnxietyTrigger, pk=trigger_id, user=request.user
@@ -341,6 +358,7 @@ def journal_create(request, trigger_id=None):
 
     if request.method == "POST":
         form = JournalEntryForm(request.POST)
+
         form.fields["trigger"].queryset = AnxietyTrigger.objects.filter(
             user=request.user
         )
@@ -348,14 +366,18 @@ def journal_create(request, trigger_id=None):
         if form.is_valid():
             entry = form.save(commit=False)
             entry.user = request.user
+
             if trigger:
                 entry.trigger = trigger
+
             entry.save()
             return redirect("resilia:journal_list")
+
     else:
         form = JournalEntryForm(
             initial={"trigger": trigger} if trigger else None
         )
+
         form.fields["trigger"].queryset = AnxietyTrigger.objects.filter(
             user=request.user
         )
@@ -365,7 +387,6 @@ def journal_create(request, trigger_id=None):
         "journal/form.html",
         {"form": form, "trigger": trigger},
     )
-
 
 @login_required
 @premium_required
@@ -380,8 +401,10 @@ def journal_edit(request, pk):
     else:
         form = JournalEntryForm(instance=entry)
 
-    return render(request, "journal/form.html", {"form": form, "edit": True})
-
+    return render(request, "journal/form.html", {
+        "form": form,
+        "edit": True
+    })
 
 @login_required
 @premium_required
@@ -392,118 +415,99 @@ def journal_delete(request, pk):
         entry.delete()
         return redirect("resilia:journal_list")
 
-    return render(request, "journal/confirm_delete.html", {"entry": entry})
+    return render(request, "journal/confirm_delete.html", {
+        "entry": entry
+    })
 
-
-
-@login_required
-@premium_required
-def tracker_list(request):
-    triggers = AnxietyTrigger.objects.filter(user=request.user)
-    exercises = get_user_cbt_recommendations(request.user)
-
-    return render(
-        request,
-        "tracker_list.html",   # ✅ removed resilia/
-        {
-            "triggers": triggers,
-            "exercises": exercises,
-        },
-    )
-
-@login_required
-@premium_required
-def exercise_detail(request, pk):
-    exercise = get_object_or_404(CBTExercise, pk=pk)
-    return render(request, "exercise_detail.html", {"exercise": exercise})
-
-stripe.api_key = settings.STRIPE_SECRET_KEY
-# =========================
-# STRIPE CUSTOMER PORTAL
-# =========================
 @login_required
 def customer_portal(request):
     try:
-        subscription = Subscription.objects.get(user=request.user)
+        sub = Subscription.objects.get(user=request.user)
     except Subscription.DoesNotExist:
         return redirect("resilia:upgrade")
 
-    domain_url = request.build_absolute_uri("/")
+    if sub.stripe_customer_id:
+        domain_url = request.build_absolute_uri("/")
 
-    session = stripe.billing_portal.Session.create(
-        customer=subscription.stripe_customer_id,
-        return_url=domain_url,
-    )
+        session = stripe.billing_portal.Session.create(
+            customer=sub.stripe_customer_id,
+            return_url=domain_url,
+        )
 
-    return redirect(session.url)
+        return redirect(session.url)
 
-
+    return redirect("resilia:checkout")
+    
+# =========================
+# STRIPE
+# =========================
 @login_required
 def create_checkout_session(request):
-
     domain_url = request.build_absolute_uri('/')
-    email = request.user.email or "customer@example.com"
+
+    if not request.user.email:
+        messages.error(request, "Please add an email to continue.")
+        return redirect("resilia:home")
 
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
         mode="subscription",
-        customer_email=email,
+        customer_email=request.user.email,
+        allow_promotion_codes=True,
         line_items=[{
             "price": "price_1T5aD3FT8cf21M5WNz1g1INe",
             "quantity": 1,
         }],
-        subscription_data={
-            "trial_period_days": 3
-        },
-        
+        subscription_data={"trial_period_days": 7},
         success_url=domain_url + "success/?session_id={CHECKOUT_SESSION_ID}",
         cancel_url=domain_url + "upgrade/",
     )
 
     return redirect(session.url)
 
-@login_required
-def enter_access_code(request):
-    if request.method == "POST":
-        code_input = request.POST.get("code")
+ 
 
-        try:
-            access_code = AccessCode.objects.get(code=code_input)
-
-            if not access_code.is_active:
-                messages.error(request, "This code is no longer active.")
-                return redirect('enter_code')
-
-            if access_code.used_count >= access_code.max_uses:
-                messages.error(request, "This code has reached its limit.")
-                return redirect('enter_code')
-
-            # ✅ Get or create subscription
-            subscription, created = Subscription.objects.get_or_create(user=request.user)
-
-            # ✅ Grant free access
-            subscription.free_access = True
-            subscription.save()
-
-            # ✅ Update usage
-            access_code.used_count += 1
-            access_code.save()
-
-            messages.success(request, "Access unlocked 🎉")
-            return redirect('resilia:home')
-
-        except AccessCode.DoesNotExist:
-            messages.error(request, "Invalid code.")
-
-    return render(request, "enter_code.html")
-
-def subscription_success(request):
-    return render(request, "subscription_success.html")
 
 
 def upgrade(request):
-    return render(request, "upgrade.html")
+    has_used_trial = False  # default
+
+    if request.user.is_authenticated:
+        try:
+            sub = Subscription.objects.get(user=request.user)
+            has_used_trial = sub.has_used_trial
+        except Subscription.DoesNotExist:
+            has_used_trial = False
+
+    return render(request, "upgrade.html", {
+        "has_used_trial": has_used_trial
+    })
+    
+
+def subscription_success(request):
+    session_id = request.GET.get("session_id")
+
+    if not session_id:
+        return redirect("resilia:home")
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+
+        sub, _ = Subscription.objects.get_or_create(user=request.user)
+        sub.is_active = True
+        sub.stripe_customer_id = session.get("customer")
+        sub.has_used_trial = True
+        sub.save()
+
+        messages.success(request, "Your subscription is now active 🎉")
+
+    except Exception as e:
+        print("Stripe error:", e)
+        messages.error(request, "Something went wrong.")
+
+    return render(request, "subscription_success.html")
+
+
 
 def subscription_cancel(request):
     return render(request, "subscription_cancel.html")
-

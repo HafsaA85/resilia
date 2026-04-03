@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from .views import submit_lead
+from django.contrib.auth.models import User
 
 app_name = "resilia"
 
@@ -18,7 +19,11 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
 
     # Subscription
-    path('create-checkout-session/', views.create_checkout_session, name='checkout'),
+   path(
+    'create-checkout-session/',
+    views.create_checkout_session,
+    name='create_checkout_session'
+),
     path("upgrade/", views.upgrade, name="upgrade"),
     path("success/", views.subscription_success, name="subscription_success"),
     path("cancel/", views.subscription_cancel, name="subscription_cancel"),
@@ -37,13 +42,8 @@ urlpatterns = [
     path("journal/<int:pk>/delete/", views.journal_delete, name="journal_delete"),
     path("billing/", views.customer_portal, name="customer_portal"),
     path("contact/", views.contact, name="contact"),
-
-    # Stripe
-    path(
-    "create-checkout-session/",
-    views.create_checkout_session,
-    name="create-checkout-session",
-),
+    path("contact/success/", views.contact_success, name="contact_success"),
+    
 
 #submit lead from the website
 

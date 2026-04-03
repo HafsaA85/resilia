@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enter Access Code</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f7f7f7;
+            text-align: center;
+            padding-top: 100px;
+        }
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 350px;
+            margin: auto;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: black;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .message {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Enter Access Code</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="code" placeholder="Enter your code">
+        <button type="submit">Unlock Access</button>
+    </form>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <p style="margin-top:15px;">
+        Or <a href="{% url 'resilia:upgrade' %}">upgrade here</a>
+    </p>
+</div>
+
+</body>
+</html>

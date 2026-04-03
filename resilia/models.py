@@ -1,5 +1,7 @@
+from datetime import timedelta
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 # =========================
@@ -7,11 +9,16 @@ from django.contrib.auth.models import User
 # =========================
 class Subscription(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
-    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=False)
-    free_access = models.BooleanField(default=False)
+    free_access = models.BooleanField(default=True)
+    trial_start = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
+    has_used_trial = models.BooleanField(default=False)
+
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+
+    def is_trial_active(self):
+        return timezone.now() <= self.trial_start + timedelta(days=7)
 
     def __str__(self):
         return f"{self.user.username} Subscription"
@@ -100,6 +107,7 @@ class OrganisationLead(models.Model):
 
     organisation_name = models.CharField(max_length=150)
     contact_name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20, blank=True)
     email = models.EmailField()
 
     role = models.CharField(max_length=100, blank=True)

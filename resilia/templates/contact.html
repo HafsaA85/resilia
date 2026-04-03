@@ -1,55 +1,53 @@
 {% extends "base.html" %}
 
-{% block title %}Contact | Resilia{% endblock %}
-
 {% block content %}
-<div class="container py-5" style="max-width:700px;">
+<div class="container py-5">
 
-    <h1 class="mb-4">Partner With Resilia</h1>
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
 
-    <p class="mb-4">
-        If your organisation would like to support the emotional wellbeing of your people,
-        we’d be happy to explore how Resilia can help.
-    </p>
+            <div class="card shadow-sm p-4">
 
-    <form method="post">
-        {% csrf_token %}
+                <h2 class="text-center mb-3">Private Life Coaching</h2>
 
-        <div class="mb-3">
-            {{ form.organisation_name.label_tag }}
-            {{ form.organisation_name }}
+                <p class="text-center text-muted mb-4">
+                    You don’t have to go through this alone. Share what’s on your mind and we’ll gently support you.
+                </p>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label">Your Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" name="phone" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Tell us a little about what you're going through
+                        </label>
+                        <textarea name="message" rows="5" class="form-control"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        Request a Session
+                    </button>
+                </form>
+
+            </div>
+
         </div>
-
-        <div class="mb-3">
-            {{ form.contact_name.label_tag }}
-            {{ form.contact_name }}
-        </div>
-
-        <div class="mb-3">
-            {{ form.email.label_tag }}
-            {{ form.email }}
-        </div>
-
-        <div class="mb-3">
-            {{ form.role.label_tag }}
-            {{ form.role }}
-        </div>
-
-        <div class="mb-3">
-            {{ form.organisation_type.label_tag }}
-            {{ form.organisation_type }}
-        </div>
-
-        <div class="mb-3">
-            {{ form.message.label_tag }}
-            {{ form.message }}
-        </div>
-
-        <button type="submit" class="btn btn-primary">
-            Request Information
-        </button>
-
-    </form>
+    </div>
 
 </div>
 {% endblock %}
