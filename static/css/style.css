@@ -7,11 +7,19 @@
     --accent: #F2E9E4;
 }
 
-body, h1, h2, h3, h4, h5, h6, p, li, a, span {
+body {
     font-family: 'Segoe UI', Roboto, sans-serif !important;
     background-color: var(--bg);
     color: var(--text-dark);
+}
 
+h1, h2, h3, h4, h5, h6, p, li, span {
+    color: var(--text-dark);
+}
+
+a {
+    color: var(--text-dark);
+    text-decoration: none;
 }
 
 nav.navbar.noor-navbar {
