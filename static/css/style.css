@@ -8,6 +8,7 @@
 }
 
 body {
+    background: pink !important;
     font-family: 'Segoe UI', Roboto, sans-serif !important;
     background-color: var(--bg);
     color: var(--text-dark);
