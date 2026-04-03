@@ -153,7 +153,9 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+
 
 # Redirects after login / logout
 LOGIN_REDIRECT_URL = "/tracker/"   # after login
