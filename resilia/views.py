@@ -520,6 +520,11 @@ def subscription_cancel(request):
 
 
 
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import stripe
+from django.conf import settings
+
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
@@ -530,55 +535,10 @@ def stripe_webhook(request):
         event = stripe.Webhook.construct_event(
             payload, sig_header, endpoint_secret
         )
-    except ValueError:
-        return HttpResponse(status=400)
-    except stripe.error.SignatureVerificationError:
+    except Exception:
         return HttpResponse(status=400)
 
-    # 🎯 Handle events
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-
-        customer_id = session.get('customer')
-        subscription_id = session.get('subscription')
-
-        # 👉 Find your user (IMPORTANT: store this in metadata when creating checkout)
-        user_id = session['metadata'].get('user_id')
-
-        from django.contrib.auth.models import User
-        user = User.objects.get(id=user_id)
-
-        # ✅ Activate user
-        user.profile.stripe_customer_id = customer_id
-        user.profile.stripe_subscription_id = subscription_id
-        user.profile.is_active = True
-        user.profile.save()
-
-        # 💰 Affiliate tracking
-        if user.profile.referred_by:
-            # create affiliate record
-            pass
-
-    elif event['type'] == 'customer.subscription.updated':
-        subscription = event['data']['object']
-        customer_id = subscription['customer']
-
-        from yourapp.models import Profile
-        profile = Profile.objects.get(stripe_customer_id=customer_id)
-
-        status = subscription['status']
-
-        profile.is_active = status in ['active', 'trialing']
-        profile.save()
-
-    elif event['type'] == 'customer.subscription.deleted':
-        subscription = event['data']['object']
-        customer_id = subscription['customer']
-
-        from yourapp.models import Profile
-        profile = Profile.objects.get(stripe_customer_id=customer_id)
-
-        profile.is_active = False
-        profile.save()
+    # Just log event type for now
+    print("Stripe event received:", event['type'])
 
     return HttpResponse(status=200)
