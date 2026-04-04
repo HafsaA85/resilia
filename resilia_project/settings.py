@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "resilia",
     "organisations",
     "corsheaders",
+    'widget_tweaks',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True

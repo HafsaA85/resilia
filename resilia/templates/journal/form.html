@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load widget_tweaks %}
 
 {% block content %}
 
@@ -20,18 +21,18 @@
         {% csrf_token %}
 
         <div class="form-group mb-3">
-          <label for="id_trigger">Trigger</label>
-          {{ form.trigger }}
+          <label class="form-label">Trigger</label>
+          {{ form.trigger|add_class:"form-control" }}
         </div>
 
         <div class="form-group mb-3">
-          <label for="id_title">Title</label>
-          {{ form.title }}
+          <label class="form-label">Title</label>
+          {{ form.title|add_class:"form-control" }}
         </div>
 
         <div class="form-group mb-4">
-          <label for="id_content">Your thoughts</label>
-          {{ form.content }}
+          <label class="form-label">Your thoughts</label>
+          {{ form.content|add_class:"form-control" }}
         </div>
 
         <button type="submit" class="btn btn-primary journal-save-btn">
@@ -46,3 +47,4 @@
 </div>
 
 {% endblock %}
+

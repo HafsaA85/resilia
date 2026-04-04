@@ -6,10 +6,23 @@ from .models import JournalEntry
 
 
 
+from django import forms
+from .models import JournalEntry
+
 class JournalEntryForm(forms.ModelForm):
     class Meta:
         model = JournalEntry
-        fields = ["title", "content"]
+        fields = ['trigger', 'title', 'content']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['trigger'].widget.attrs.update({'class': 'form-control'})
+        self.fields['title'].widget.attrs.update({'class': 'form-control'})
+        self.fields['content'].widget.attrs.update({
+            'class': 'form-control',
+            'rows': 6
+        })
 
 class UserRegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
