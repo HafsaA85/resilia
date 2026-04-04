@@ -519,17 +519,14 @@ def subscription_cancel(request):
     return render(request, "subscription_cancel.html")
 
 
-
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-import stripe
-from django.conf import settings
-
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+
+    if sig_header is None:
+        return HttpResponse(status=200)
 
     try:
         event = stripe.Webhook.construct_event(
