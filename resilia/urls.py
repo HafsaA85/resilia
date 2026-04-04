@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import submit_lead
+from .views import stripe_webhook, submit_lead
 from django.contrib.auth.models import User
 
 app_name = "resilia"
@@ -49,5 +49,6 @@ urlpatterns = [
 
     path("resilia/api/lead/", submit_lead, name="submit_lead"),
 
+    path('stripe/webhook/', stripe_webhook, name='stripe_webhook'),
 
 ]
