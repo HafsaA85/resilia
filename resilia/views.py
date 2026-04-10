@@ -1,3 +1,5 @@
+from urllib import request
+
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
@@ -63,32 +65,14 @@ def premium_required(view_func):
         except Subscription.DoesNotExist:
             return redirect("resilia:upgrade")
 
-        if not sub.stripe_customer_id:
-            return redirect("resilia:upgrade")
+        if not sub.is_active:
+         return redirect("resilia:upgrade")
 
-        try:
-            subscriptions = stripe.Subscription.list(
-                customer=sub.stripe_customer_id,
-                status="all",
-                limit=1
-            )
-
-            if subscriptions.data:
-                stripe_sub = subscriptions.data[0]
-
-                # ❌ BLOCK IF CANCELLED
-                if stripe_sub.cancel_at_period_end:
-                    return redirect("resilia:upgrade")
-
-                # ✅ ALLOW ONLY ACTIVE OR TRIAL
-                if stripe_sub.status in ["active", "trialing"]:
-                    return view_func(request, *args, **kwargs)
-
-        except Exception as e:
-            print("Stripe error:", e)
+        if sub.is_active:
+          return view_func(request, *args, **kwargs)
+        
 
         return redirect("resilia:upgrade")
-
     return wrapper
     
     
@@ -518,15 +502,11 @@ def subscription_success(request):
 def subscription_cancel(request):
     return render(request, "subscription_cancel.html")
 
-
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
-
-    if sig_header is None:
-        return HttpResponse(status=200)
 
     try:
         event = stripe.Webhook.construct_event(
@@ -535,7 +515,27 @@ def stripe_webhook(request):
     except Exception:
         return HttpResponse(status=400)
 
-    # Just log event type for now
-    print("Stripe event received:", event['type'])
+    event_type = event["type"]
+    data = event["data"]["object"]
+
+    print("Stripe event:", event_type)
+
+    # ✅ When checkout completes
+    if event_type == "checkout.session.completed":
+        user_id = data["metadata"].get("user_id")
+        customer_id = data["customer"]
+
+        try:
+            sub = Subscription.objects.get(user_id=user_id)
+
+            sub.stripe_customer_id = customer_id
+            sub.is_active = True
+            sub.has_used_trial = True
+            sub.save()
+
+            print("✅ Subscription updated for user:", user_id)
+
+        except Exception as e:
+            print("❌ Webhook error:", e)
 
     return HttpResponse(status=200)

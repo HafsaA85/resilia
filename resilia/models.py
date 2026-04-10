@@ -10,7 +10,7 @@ from django.utils import timezone
 class Subscription(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
-    free_access = models.BooleanField(default=True)
+    free_access = models.BooleanField(default=False)
     trial_start = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
     has_used_trial = models.BooleanField(default=False)
