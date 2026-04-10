@@ -486,7 +486,6 @@ def subscription_success(request):
         sub, _ = Subscription.objects.get_or_create(user=request.user)
         sub.is_active = True
         sub.stripe_customer_id = session.get("customer")
-        sub.has_used_trial = True
         sub.save()
 
         messages.success(request, "Your subscription is now active 🎉")
@@ -507,6 +506,7 @@ def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+    print("Webhook secret:", settings.STRIPE_WEBHOOK_SECRET)
 
     try:
         event = stripe.Webhook.construct_event(
@@ -522,20 +522,21 @@ def stripe_webhook(request):
 
     # ✅ When checkout completes
     if event_type == "checkout.session.completed":
-        user_id = data["metadata"].get("user_id")
-        customer_id = data["customer"]
+     user_id = data["metadata"].get("user_id")
+    customer_id = data["customer"]
+    subscription_id = data["subscription"]
 
-        try:
-            sub = Subscription.objects.get(user_id=user_id)
+    try:
+        sub = Subscription.objects.get(user_id=user_id)
 
-            sub.stripe_customer_id = customer_id
-            sub.is_active = True
-            sub.has_used_trial = True
-            sub.save()
+        sub.stripe_customer_id = customer_id
+        sub.is_active = True
+        sub.has_used_trial = False  # ✅ FIXED
+        sub.save()
 
-            print("✅ Subscription updated for user:", user_id)
+        print("✅ Webhook updated subscription:", user_id)
 
-        except Exception as e:
-            print("❌ Webhook error:", e)
+    except Exception as e:
+        print("❌ Webhook error:", e)
 
     return HttpResponse(status=200)
