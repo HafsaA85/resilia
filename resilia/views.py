@@ -145,49 +145,11 @@ def home(request):
         else:
             break
 
-    # =========================
-    # ACCESS CONTROL + STRIPE TRIAL
-    # =========================
-    has_access = False
+    # ✅ SIMPLE ACCESS (NO STRIPE CALLS)
+    has_access = True
     trial_days_left = None
     show_upgrade_prompt = False
 
-    try:
-        sub = Subscription.objects.get(user=request.user)
-
-        if sub.stripe_customer_id:
-            subscriptions = stripe.Subscription.list(
-                customer=sub.stripe_customer_id,
-                status="all",
-                limit=1
-            )
-
-            if subscriptions.data:
-                stripe_sub = subscriptions.data[0]
-
-                # ✅ ACCESS
-                if stripe_sub.status in ["active", "trialing"]:
-                    has_access = True
-
-                # 🟡 TRIAL INFO
-                if stripe_sub.status == "trialing":
-                    trial_end = timezone.datetime.fromtimestamp(
-                        stripe_sub.trial_end,
-                        tz=timezone.utc
-                    )
-
-                    remaining = trial_end - timezone.now()
-                    trial_days_left = max(remaining.days, 0)
-
-                    if trial_days_left <= 2:
-                        show_upgrade_prompt = True
-
-    except Exception as e:
-        print("Stripe trial error:", e)
-
-    # =========================
-    # OPTIONAL CONTENT
-    # =========================
     affirmation = (
         "You are allowed to go gently. Healing does not rush."
         if journal_entries.exists()

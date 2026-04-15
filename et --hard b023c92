@@ -1,0 +1,59 @@
+[33m9f7fa4c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix login error 500
+[33m6f7884a[m Fix login error 500
+[33m36fed56[m Add CSRF
+[33m0b5be74[m Fix 500 error
+[33m3f0fbc9[m Added Subscription ID
+[33mb023c92[m Stripe user issue
+[33m9acf1f2[m Stripe name error
+[33m6b6be37[m Stripe error fix 500
+[33mefd2291[m User details for stripe
+[33m297d1ae[m removed env
+[33m4be7a10[m Fix Stripe sync and access logic
+[33m95f6063[m Fix Stripe sync and access logic
+[33m73942ea[m  webhook error
+[33m2b35c8e[m Safe webhook
+[33ma606299[m Webhook
+[33mdc8f4b2[m fix: add widget tweaks dependency
+[33m79cd4d3[m Journal entry fix
+[33m558f434[m CSS V2
+[33mda3ef35[m Debug
+[33m1fbc164[m Testing Journal Form issue
+[33m93f2c32[m connect postgres and fixes
+[33mcb878aa[m Static file
+[33m2334d14[m Price ID
+[33m6565e17[m Fix navbar
+[33m030a497[m Fix static files setup
+[33ma159229[m Payment process
+[33mfdf29de[m payment link
+[33m4703117[m change trial period
+[33m522fc33[m price change and free trial change
+[33m6a931dc[m add allowed host
+[33me9d342c[m add allowed host
+[33mea34fa4[m add allowed host
+[33m197726f[m make organisation_size optional
+[33m2de2537[m add api lead endpoint
+[33mdd45c9b[m add django cors headers
+[33m3edf069[m Add API lead endpoint
+[33md951f5b[m Updated success view
+[33md77518a[m Updated domain
+[33m77003bb[m Updated stripe setting
+[33m8c4435a[m Updated dependencies
+[33mb4eba53[m Updated dependencies
+[33m44c7651[m Add gunicorn for production server
+[33me816cb8[m Fix project structure for deployment
+[33m6e2677f[m Remove Stripe secret key and use environment variables and credentials update
+[33mdaf673d[m Added premium to use the platform
+[33m3159f5e[m Added premium to use the platform
+[33m6c30d6f[m Added organisation Lead feature
+[33m927ee43[m Updated README
+[33m0bd7db5[m Add CBT exercises system and personalised recommendations
+[33m9f1709d[m Removed venv from repository and added to gitignore
+[33m6bb38a1[m Fix login error display for incorrect credentials
+[33m183484c[m Fix login error display for incorrect credentials
+[33mc61b675[m Fix registration validation errors and deployment config
+[33mf307400[m Fix login error display using correct Django auth template path
+[33mafca0e2[m Prepare app for Render deployment
+[33m1a086e6[m Add README documentation
+[33mbc8fe4a[m Add journal, triggers, navigation, and UI updates
+[33mfa24602[m Prepare project for deployment (env, static, whitenoise)
+[33mae6c364[m Initial commit - Noor for Her Django app
