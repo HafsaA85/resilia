@@ -440,6 +440,11 @@ def create_checkout_session(request):
         payment_method_types=["card"],
         mode="subscription",
         customer_email=request.user.email,
+        customer_creation="always",
+        customer_update={
+            "name": "auto"
+        },
+        billing_address_collection='required',
         allow_promotion_codes=True,
         line_items=[{
             "price": "price_1Szn42FT8cf21M5WpK8rHELs",
@@ -506,7 +511,6 @@ def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
-    print("Webhook secret:", settings.STRIPE_WEBHOOK_SECRET)
 
     try:
         event = stripe.Webhook.construct_event(
@@ -522,21 +526,46 @@ def stripe_webhook(request):
 
     # ✅ When checkout completes
     if event_type == "checkout.session.completed":
-     user_id = data["metadata"].get("user_id")
-    customer_id = data["customer"]
-    subscription_id = data["subscription"]
+        user_id = data["metadata"].get("user_id")
+        customer_id = data["customer"]
 
-    try:
-        sub = Subscription.objects.get(user_id=user_id)
+        # ✅ Get name + email from Stripe
+        customer_details = data.get("customer_details", {})
+        name = customer_details.get("name")
+        email = customer_details.get("email")
 
-        sub.stripe_customer_id = customer_id
-        sub.is_active = True
-        sub.has_used_trial = False  # ✅ FIXED
-        sub.save()
+        print("Name:", name)
+        print("Email:", email)
 
-        print("✅ Webhook updated subscription:", user_id)
+        # ✅ Split name
+        first_name = ""
+        last_name = ""
 
-    except Exception as e:
-        print("❌ Webhook error:", e)
+        if name:
+            parts = name.split(" ", 1)
+            first_name = parts[0]
+            if len(parts) > 1:
+                last_name = parts[1]
+
+        try:
+            sub = Subscription.objects.get(user_id=user_id)
+
+            # ✅ Update Django user
+            user = sub.user
+            user.first_name = first_name
+            user.last_name = last_name
+            user.email = email
+            user.save()  # 🔥 YOU WERE MISSING THIS
+
+            # ✅ Update subscription
+            sub.stripe_customer_id = customer_id
+            sub.is_active = True
+            sub.has_used_trial = False
+            sub.save()
+
+            print("✅ Webhook updated subscription + user:", user_id)
+
+        except Exception as e:
+            print("❌ Webhook error:", e)
 
     return HttpResponse(status=200)
