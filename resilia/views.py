@@ -234,7 +234,10 @@ def register(request):
     if request.method == "POST":
         form = UserRegisterForm(request.POST)  
         if form.is_valid():
-            user = form.save()
+            user = form.save(commit=False)
+            user.first_name = form.cleaned_data.get('first_name')
+            user.last_name = form.cleaned_data.get('last_name')
+            user.save()
             Subscription.objects.create(user=user)
             login(request, user)
             return redirect("resilia:home")
@@ -533,33 +536,32 @@ def stripe_webhook(request):
         print("Name:", name)
         print("Email:", email)
 
-        # ✅ Update Stripe customer with correct name
-    if name:
-     stripe.Customer.modify(
-        customer_id,
-        name=name,
-        email=email
-    )
+        # ✅ Get user from DB first
+        sub = Subscription.objects.get(user_id=user_id)
+        user = sub.user
+
+        # ✅ Use Django name (correct source)
+        full_name = f"{user.first_name} {user.last_name}"
+
+        # ✅ Update Stripe with correct name
+        stripe.Customer.modify(
+            customer_id,
+            name=full_name,
+            email=user.email
+        )
 
         # ✅ Split name
-    first_name = ""
-    last_name = ""
+        first_name = ""
+        last_name = ""
 
-    if name:
+        if name:
             parts = name.split(" ", 1)
             first_name = parts[0]
             if len(parts) > 1:
                 last_name = parts[1]
 
-    try:
+        try:
             sub = Subscription.objects.get(user_id=user_id)
-
-            # ✅ Update Django user
-            user = sub.user
-            user.first_name = first_name
-            user.last_name = last_name
-            user.email = email
-            user.save()  # 🔥 YOU WERE MISSING THIS
 
             # ✅ Update subscription
             sub.stripe_customer_id = customer_id
@@ -569,7 +571,7 @@ def stripe_webhook(request):
 
             print("✅ Webhook updated subscription + user:", user_id)
 
-    except Exception as e:
+        except Exception as e:
             print("❌ Webhook error:", e)
 
     return HttpResponse(status=200)
