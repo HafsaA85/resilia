@@ -9,7 +9,7 @@ from .models import Subscription
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ("user", "is_active", "trial_start", "stripe_customer_id")
+    list_display = ("user", "is_active", "trial_start", "stripe_customer_id", "stripe_subscription_id")
 
 
 @admin.register(AccessCode)

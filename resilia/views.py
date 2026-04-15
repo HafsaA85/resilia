@@ -489,6 +489,7 @@ def stripe_webhook(request):
     if event_type == "checkout.session.completed":
         user_id = data["metadata"].get("user_id")
         customer_id = data["customer"]
+        subscription_id = data.get("subscription")
 
         # ✅ Get name + email from Stripe
         customer_details = data.get("customer_details", {})
@@ -527,6 +528,7 @@ def stripe_webhook(request):
 
             # ✅ Update subscription
             sub.stripe_customer_id = customer_id
+            sub.stripe_subscription_id = subscription_id
             sub.is_active = True
             sub.has_used_trial = False
             sub.save()

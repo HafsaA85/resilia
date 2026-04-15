@@ -16,7 +16,8 @@ class Subscription(models.Model):
     has_used_trial = models.BooleanField(default=False)
 
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
-
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    
     def is_trial_active(self):
         return timezone.now() <= self.trial_start + timedelta(days=7)
 
