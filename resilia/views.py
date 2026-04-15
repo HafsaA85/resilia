@@ -533,17 +533,25 @@ def stripe_webhook(request):
         print("Name:", name)
         print("Email:", email)
 
-        # ✅ Split name
-        first_name = ""
-        last_name = ""
+        # ✅ Update Stripe customer with correct name
+    if name:
+     stripe.Customer.modify(
+        customer_id,
+        name=name,
+        email=email
+    )
 
-        if name:
+        # ✅ Split name
+    first_name = ""
+    last_name = ""
+
+    if name:
             parts = name.split(" ", 1)
             first_name = parts[0]
             if len(parts) > 1:
                 last_name = parts[1]
 
-        try:
+    try:
             sub = Subscription.objects.get(user_id=user_id)
 
             # ✅ Update Django user
@@ -561,7 +569,7 @@ def stripe_webhook(request):
 
             print("✅ Webhook updated subscription + user:", user_id)
 
-        except Exception as e:
+    except Exception as e:
             print("❌ Webhook error:", e)
 
     return HttpResponse(status=200)
