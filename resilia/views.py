@@ -437,26 +437,22 @@ def create_checkout_session(request):
         return redirect("resilia:home")
 
     session = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        mode="subscription",
-        customer_email=request.user.email,
-        customer_creation="always",
-        customer_update={
-            "name": "auto"
-        },
-        billing_address_collection='required',
-        allow_promotion_codes=True,
-        line_items=[{
-            "price": "price_1Szn42FT8cf21M5WpK8rHELs",
-            "quantity": 1,
-        }],
-        subscription_data={"trial_period_days": 7},
-        success_url=domain_url + "success/?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url=domain_url + "upgrade/",
-        metadata={
+    payment_method_types=["card"],
+    mode="subscription",
+    customer_email=request.user.email,
+    billing_address_collection='required',
+    allow_promotion_codes=True,
+    line_items=[{
+        "price": "price_1Szn42FT8cf21M5WpK8rHELs",
+        "quantity": 1,
+    }],
+    subscription_data={"trial_period_days": 7},
+    success_url=domain_url + "success/?session_id={CHECKOUT_SESSION_ID}",
+    cancel_url=domain_url + "upgrade/",
+    metadata={
         "user_id": request.user.id
     }
-    )
+)
 
     return redirect(session.url)
 
