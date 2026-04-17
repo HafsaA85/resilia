@@ -155,20 +155,10 @@ def home(request):
     sub = Subscription.objects.filter(user=request.user).first()
 
     is_active = False
-    trial_days_left = None
 
     if sub:
         is_active = sub.is_active
-
-        if sub.has_used_trial:
-            trial_days_left = None
-        elif sub.trial_start:
-            trial_end = sub.trial_start + timedelta(days=7)
-            remaining = trial_end - timezone.now()
-            trial_days_left = max(remaining.days, 0)
-
-        else:
-            trial_days_left = 7    
+               
 
     # =========================
     # OPTIONAL CONTENT
@@ -188,7 +178,6 @@ def home(request):
             "streak": streak,
             "affirmation": affirmation,
             "is_active": is_active,
-            "trial_days_left": trial_days_left,
         },
     )
 # =========================

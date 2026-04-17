@@ -8,14 +8,6 @@
 <div class="text-center p-5">
     {% if user.is_authenticated %}
 
-{% if is_active and not trial_days_left %}
-    <p style="color: green;">✅ Subscription Active</p>
-{% elif trial_days_left %}
-    <p style="color: orange;">⏳ Free Trial Active</p>
-{% else %}
-    <p style="color: red;">⚠️ No active subscription</p>
-{% endif %}
-
 {% if trial_days_left %}
     <p>⏳ Trial ends in {{ trial_days_left }} days</p>
 {% endif %}
