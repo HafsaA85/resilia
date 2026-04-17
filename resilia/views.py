@@ -496,6 +496,7 @@ def stripe_webhook(request):
     except Exception:
         return HttpResponse(status=400)
 
+    # ✅ MUST be inside function
     event_type = event["type"]
     data = event["data"]["object"]
 
@@ -509,24 +510,6 @@ def stripe_webhook(request):
         customer_id = data["customer"]
         subscription_id = data.get("subscription")
 
-        customer_details = data.get("customer_details", {})
-        name = customer_details.get("name")
-        email = customer_details.get("email")
-
-        print("Name:", name)
-        print("Email:", email)
-
-        sub = Subscription.objects.get(user_id=user_id)
-        user = sub.user
-
-        full_name = f"{user.first_name} {user.last_name}"
-
-        stripe.Customer.modify(
-            customer_id,
-            name=full_name,
-            email=user.email
-        )
-
         try:
             sub = Subscription.objects.get(user_id=user_id)
 
@@ -536,42 +519,38 @@ def stripe_webhook(request):
             sub.has_used_trial = False
             sub.save()
 
-            print("✅ Webhook updated subscription:", user_id)
+            print("✅ Checkout completed:", user_id)
 
-        except Exception as e:
-            print("❌ Webhook error:", e)
+        except Subscription.DoesNotExist:
+            print("⚠️ Subscription not found:", user_id)
 
     # =========================
-    # PAYMENT SUCCEEDED (AFTER TRIAL)
+    # PAYMENT SUCCEEDED
     # =========================
-    if event_type == "invoice.payment_succeeded":
-       customer_id = data.get("customer")
-
-    try:
-        sub = Subscription.objects.get(stripe_customer_id=customer_id)
-
-        # 🔥 Get subscription from invoice properly
+    elif event_type == "invoice.payment_succeeded":
+        customer_id = data.get("customer")
         subscription_id = data.get("subscription")
 
-        sub.is_active = True
+        try:
+            sub = Subscription.objects.get(stripe_customer_id=customer_id)
 
-        if subscription_id:
-            sub.stripe_subscription_id = subscription_id
+            sub.is_active = True
 
-        # ✅ Trial is now over
-        sub.has_used_trial = True
+            if subscription_id:
+                sub.stripe_subscription_id = subscription_id
 
-        sub.save()
+            sub.has_used_trial = True
+            sub.save()
 
-        print("✅ Payment succeeded → subscription activated:", customer_id)
+            print("✅ Payment succeeded:", customer_id)
 
-    except Subscription.DoesNotExist:
-        print("⚠️ Subscription not found:", customer_id)
+        except Subscription.DoesNotExist:
+            print("⚠️ Subscription not found:", customer_id)
 
     # =========================
-    # CANCELLATION / FAILURE
+    # SUBSCRIPTION CANCELLED
     # =========================
-    if event_type in ["customer.subscription.deleted", "invoice.payment_failed"]:
+    elif event_type in ["customer.subscription.deleted", "invoice.payment_failed"]:
         customer_id = data.get("customer")
 
         try:
