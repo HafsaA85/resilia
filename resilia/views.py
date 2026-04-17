@@ -145,11 +145,26 @@ def home(request):
         else:
             break
 
-    # ✅ SIMPLE ACCESS (NO STRIPE CALLS)
-    has_access = True
-    trial_days_left = None
-    show_upgrade_prompt = False
+    # =========================
+    # SAFE SUBSCRIPTION STATUS
+    # =========================
+    sub = Subscription.objects.filter(user=request.user).first()
 
+    is_active = False
+    trial_days_left = None
+
+    if sub:
+        is_active = sub.is_active
+
+        # ✅ Trial countdown (safe)
+        if sub.trial_start:
+            trial_end = sub.trial_start + timedelta(days=7)
+            remaining = trial_end - timezone.now()
+            trial_days_left = max(remaining.days, 0)
+
+    # =========================
+    # OPTIONAL CONTENT
+    # =========================
     affirmation = (
         "You are allowed to go gently. Healing does not rush."
         if journal_entries.exists()
@@ -164,9 +179,8 @@ def home(request):
             "journal_days": journal_days,
             "streak": streak,
             "affirmation": affirmation,
-            "trial_days_left": trial_days_left,
-            "show_upgrade_prompt": show_upgrade_prompt,
-            "has_access": has_access,
+            "is_active": is_active,                 # ✅ NEW
+            "trial_days_left": trial_days_left,     # ✅ NEW
         },
     )
 

@@ -8,6 +8,16 @@
 <div class="text-center p-5">
     {% if user.is_authenticated %}
 
+{% if is_active %}
+    <p style="color: green;">✅ Subscription Active</p>
+{% else %}
+    <p style="color: red;">⚠️ No active subscription</p>
+{% endif %}
+
+{% if trial_days_left %}
+    <p>⏳ Trial ends in {{ trial_days_left }} days</p>
+{% endif %}
+
     {% if user.date_joined|timesince < "1 day" %}
         <h1 class="mb-4">
             Welcome to Resilia
@@ -44,7 +54,7 @@
 
 {% endif %}
 
-    {% if has_access %}
+    {% if is_active %}
     <a href="{% url 'resilia:tracker_list' %}" class="btn btn-primary btn-lg">
         Continue Your Journey
     </a>
@@ -53,6 +63,7 @@
         Unlock Full Access
     </a>
 {% endif %}
+
 </div>
 
 {% if user.is_authenticated %}
