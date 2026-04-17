@@ -58,7 +58,7 @@
     {% has_organisation request.user as has_org %}
 
 {% if not has_org %}
-  <a href="{% url 'resilia:upgrade' %}" class="btn btn-primary">
+  <a href="{% url 'resilia:customer_portal' %}" class="btn btn-primary">
       Manage Subscription
   </a>
 {% endif %}

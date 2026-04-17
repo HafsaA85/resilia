@@ -20,10 +20,7 @@ urlpatterns = [
 
     # Subscription
    path(
-    'create-checkout-session/',
-    views.create_checkout_session,
-    name='create_checkout_session'
-),
+    'create-checkout-session/', views.create_checkout_session, name='create_checkout_session'),
     path("upgrade/", views.upgrade, name="upgrade"),
     path("success/", views.subscription_success, name="subscription_success"),
     path("cancel/", views.subscription_cancel, name="subscription_cancel"),

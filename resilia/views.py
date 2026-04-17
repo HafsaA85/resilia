@@ -378,6 +378,7 @@ def customer_portal(request):
     except Subscription.DoesNotExist:
         return redirect("resilia:upgrade")
 
+    # ✅ If user has Stripe customer → go to portal
     if sub.stripe_customer_id:
         domain_url = request.build_absolute_uri("/")
 
@@ -388,7 +389,8 @@ def customer_portal(request):
 
         return redirect(session.url)
 
-    return redirect("resilia:checkout")
+    # ❌ Only if no Stripe customer → checkout
+    return redirect("resilia:upgrade")
     
 # =========================
 # STRIPE
@@ -534,8 +536,21 @@ def stripe_webhook(request):
             sub.save()
 
             print("✅ Webhook updated subscription + user:", user_id)
-
         except Exception as e:
             print("❌ Webhook error:", e)
+
+    # ✅ Handle subscription cancellation / payment failure
+    if event_type in ["customer.subscription.deleted", "invoice.payment_failed"]:
+       customer_id = data.get("customer")
+
+    try:
+        sub = Subscription.objects.get(stripe_customer_id=customer_id)
+        sub.is_active = False
+        sub.save()
+
+        print("❌ Subscription deactivated:", customer_id)
+
+    except Subscription.DoesNotExist:
+        print("⚠️ Subscription not found:", customer_id)       
 
     return HttpResponse(status=200)
