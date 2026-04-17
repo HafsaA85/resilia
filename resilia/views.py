@@ -515,7 +515,7 @@ def stripe_webhook(request):
             email=user.email
         )
 
-        # ✅ Split name
+        # ✅ Split name (optional, kept as-is)
         first_name = ""
         last_name = ""
 
@@ -536,21 +536,22 @@ def stripe_webhook(request):
             sub.save()
 
             print("✅ Webhook updated subscription + user:", user_id)
+
         except Exception as e:
             print("❌ Webhook error:", e)
 
     # ✅ Handle subscription cancellation / payment failure
     if event_type in ["customer.subscription.deleted", "invoice.payment_failed"]:
-       customer_id = data.get("customer")
+        customer_id = data.get("customer")
 
-    try:
-        sub = Subscription.objects.get(stripe_customer_id=customer_id)
-        sub.is_active = False
-        sub.save()
+        try:
+            sub = Subscription.objects.get(stripe_customer_id=customer_id)
+            sub.is_active = False
+            sub.save()
 
-        print("❌ Subscription deactivated:", customer_id)
+            print("❌ Subscription deactivated:", customer_id)
 
-    except Subscription.DoesNotExist:
-        print("⚠️ Subscription not found:", customer_id)       
+        except Subscription.DoesNotExist:
+            print("⚠️ Subscription not found:", customer_id)
 
     return HttpResponse(status=200)
