@@ -167,6 +167,9 @@ def home(request):
             remaining = trial_end - timezone.now()
             trial_days_left = max(remaining.days, 0)
 
+        else:
+            trial_days_left = 7    
+
     # =========================
     # OPTIONAL CONTENT
     # =========================
