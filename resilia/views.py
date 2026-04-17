@@ -1,3 +1,4 @@
+from re import sub
 from urllib import request
 
 from django.http import JsonResponse
@@ -128,6 +129,9 @@ def home(request):
     if not request.user.is_authenticated:
         return render(request, "home.html")
 
+    # =========================
+    # USER DATA
+    # =========================
     triggers = AnxietyTrigger.objects.filter(user=request.user)
     journal_entries = JournalEntry.objects.filter(user=request.user)
 
@@ -146,21 +150,22 @@ def home(request):
             break
 
     # =========================
-    # SAFE SUBSCRIPTION STATUS
+    # SUBSCRIPTION
     # =========================
     sub = Subscription.objects.filter(user=request.user).first()
 
     is_active = False
     trial_days_left = None
 
-    trial_days_left = None
+    if sub:
+        is_active = sub.is_active
 
-    if sub and sub.trial_start and not sub.has_used_trial:
-     trial_end = sub.trial_start + timedelta(days=7)
-     remaining = trial_end - timezone.now()
-
-    if remaining.days > 0:
-        trial_days_left = remaining.days
+        if sub.has_used_trial:
+            trial_days_left = None
+        elif sub.trial_start:
+            trial_end = sub.trial_start + timedelta(days=7)
+            remaining = trial_end - timezone.now()
+            trial_days_left = max(remaining.days, 0)
 
     # =========================
     # OPTIONAL CONTENT
@@ -179,11 +184,10 @@ def home(request):
             "journal_days": journal_days,
             "streak": streak,
             "affirmation": affirmation,
-            "is_active": is_active,                 # ✅ NEW
-            "trial_days_left": trial_days_left,     # ✅ NEW
+            "is_active": is_active,
+            "trial_days_left": trial_days_left,
         },
     )
-
 # =========================
 # STATIC PAGES
 # =========================
