@@ -8,8 +8,10 @@
 <div class="text-center p-5">
     {% if user.is_authenticated %}
 
-{% if is_active %}
+{% if is_active and not trial_days_left %}
     <p style="color: green;">✅ Subscription Active</p>
+{% elif trial_days_left %}
+    <p style="color: orange;">⏳ Free Trial Active</p>
 {% else %}
     <p style="color: red;">⚠️ No active subscription</p>
 {% endif %}
@@ -74,7 +76,7 @@
 <div class="container mb-4 text-center">
     <div class="d-flex justify-content-center gap-3 flex-wrap">
 
-        {% if has_access %}
+        {% if is_active %}
             
             <a href="{% url 'resilia:tracker_list' %}"
                class="btn btn-primary btn-lg px-4">

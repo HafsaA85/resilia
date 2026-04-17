@@ -153,14 +153,14 @@ def home(request):
     is_active = False
     trial_days_left = None
 
-    if sub:
-        is_active = sub.is_active
+    trial_days_left = None
 
-        # ✅ Trial countdown (safe)
-        if sub.trial_start:
-            trial_end = sub.trial_start + timedelta(days=7)
-            remaining = trial_end - timezone.now()
-            trial_days_left = max(remaining.days, 0)
+    if sub and sub.trial_start and not sub.has_used_trial:
+     trial_end = sub.trial_start + timedelta(days=7)
+     remaining = trial_end - timezone.now()
+
+    if remaining.days > 0:
+        trial_days_left = remaining.days
 
     # =========================
     # OPTIONAL CONTENT
@@ -545,19 +545,28 @@ def stripe_webhook(request):
     # PAYMENT SUCCEEDED (AFTER TRIAL)
     # =========================
     if event_type == "invoice.payment_succeeded":
-        customer_id = data.get("customer")
+       customer_id = data.get("customer")
+
+    try:
+        sub = Subscription.objects.get(stripe_customer_id=customer_id)
+
+        # 🔥 Get subscription from invoice properly
         subscription_id = data.get("subscription")
 
-        try:
-            sub = Subscription.objects.get(stripe_customer_id=customer_id)
-            sub.is_active = True
+        sub.is_active = True
+
+        if subscription_id:
             sub.stripe_subscription_id = subscription_id
-            sub.save()
 
-            print("✅ Payment succeeded → subscription activated:", customer_id)
+        # ✅ Trial is now over
+        sub.has_used_trial = True
 
-        except Subscription.DoesNotExist:
-            print("⚠️ Subscription not found:", customer_id)
+        sub.save()
+
+        print("✅ Payment succeeded → subscription activated:", customer_id)
+
+    except Subscription.DoesNotExist:
+        print("⚠️ Subscription not found:", customer_id)
 
     # =========================
     # CANCELLATION / FAILURE
