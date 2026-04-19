@@ -413,27 +413,36 @@ def create_checkout_session(request):
         messages.error(request, "Please add an email to continue.")
         return redirect("resilia:home")
 
+    # ✅ Safe get/create
+    sub, _ = Subscription.objects.get_or_create(user=request.user)
+
+    # 🔒 Trial gate
+    if sub.has_used_trial:
+        trial_period_days = 0
+    else:
+        trial_period_days = 7
+
     session = stripe.checkout.Session.create(
-    payment_method_types=["card"],
-    mode="subscription",
-    customer_email=request.user.email,
-    billing_address_collection='required',
-    allow_promotion_codes=True,
-    line_items=[{
-        "price": "price_1Szn42FT8cf21M5WpK8rHELs",
-        "quantity": 1,
-    }],
-    subscription_data={"trial_period_days": 7},
-    success_url=domain_url + "success/?session_id={CHECKOUT_SESSION_ID}",
-    cancel_url=domain_url + "upgrade/",
-    metadata={
-        "user_id": request.user.id
-    }
-)
+        payment_method_types=["card"],
+        mode="subscription",
+        customer_email=request.user.email,
+        billing_address_collection='required',
+        allow_promotion_codes=True,
+        line_items=[{
+            "price": "price_1Szn42FT8cf21M5WpK8rHELs",
+            "quantity": 1,
+        }],
+        subscription_data={
+            "trial_period_days": trial_period_days
+        },
+        success_url=domain_url + "success/?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url=domain_url + "upgrade/",
+        metadata={
+            "user_id": request.user.id
+        }
+    )
 
     return redirect(session.url)
-
- 
 
 
 
@@ -492,7 +501,6 @@ def stripe_webhook(request):
     except Exception:
         return HttpResponse(status=400)
 
-    # ✅ MUST be inside function
     event_type = event["type"]
     data = event["data"]["object"]
 
@@ -512,7 +520,11 @@ def stripe_webhook(request):
             sub.stripe_customer_id = customer_id
             sub.stripe_subscription_id = subscription_id
             sub.is_active = True
-            sub.has_used_trial = False
+
+            # 🔒 Mark trial as used immediately
+            if not sub.has_used_trial:
+                sub.has_used_trial = True
+
             sub.save()
 
             print("✅ Checkout completed:", user_id)
@@ -535,7 +547,6 @@ def stripe_webhook(request):
             if subscription_id:
                 sub.stripe_subscription_id = subscription_id
 
-            sub.has_used_trial = True
             sub.save()
 
             print("✅ Payment succeeded:", customer_id)
