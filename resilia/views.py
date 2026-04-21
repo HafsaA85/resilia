@@ -66,14 +66,11 @@ def premium_required(view_func):
         except Subscription.DoesNotExist:
             return redirect("resilia:upgrade")
 
-        if not sub.is_active:
-         return redirect("resilia:upgrade")
+        if not sub.is_active and not sub.free_access:
+             return redirect("resilia:upgrade")
 
-        if sub.is_active:
-          return view_func(request, *args, **kwargs)
+        return view_func(request, *args, **kwargs)
         
-
-        return redirect("resilia:upgrade")
     return wrapper
     
     
@@ -387,6 +384,11 @@ def customer_portal(request):
         sub = Subscription.objects.get(user=request.user)
     except Subscription.DoesNotExist:
         return redirect("resilia:upgrade")
+    
+    # ✅ If user has free access → no Stripe portal
+    if sub.free_access:
+        messages.info(request, "You have free access. No subscription to manage.")
+        return redirect("resilia:home")
 
     # ✅ If user has Stripe customer → go to portal
     if sub.stripe_customer_id:
@@ -447,17 +449,17 @@ def create_checkout_session(request):
 
 
 def upgrade(request):
-    has_used_trial = False  # default
+    trial_available = False  # default
 
     if request.user.is_authenticated:
         try:
             sub = Subscription.objects.get(user=request.user)
-            has_used_trial = sub.has_used_trial
+            trial_available = not sub.has_used_trial
         except Subscription.DoesNotExist:
-            has_used_trial = False
+            trial_available = True
 
     return render(request, "upgrade.html", {
-        "has_used_trial": has_used_trial
+        "trial_available": trial_available
     })
     
 
