@@ -47,5 +47,6 @@ urlpatterns = [
     path("resilia/api/lead/", submit_lead, name="submit_lead"),
 
     path('stripe/webhook/', stripe_webhook, name='stripe_webhook'),
+    path("account/", views.account, name="account"),
 
 ]

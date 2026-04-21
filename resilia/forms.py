@@ -83,3 +83,8 @@ class OrganisationContactForm(forms.Form):
     role = forms.CharField(label="Your Role", max_length=100, required=False)
     organisation_type = forms.CharField(label="Organisation Type", max_length=100, required=False)
     message = forms.CharField(widget=forms.Textarea, label="How can we support you?")
+
+class UserUpdateForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email"]

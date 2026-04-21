@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}My Account{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <h2 class="mb-4">My Account</h2>
+
+    <!-- ========================= -->
+    <!-- USER DETAILS (VIEW MODE) -->
+    <!-- ========================= -->
+    <div class="card p-4 shadow-sm mb-4">
+
+        <h5 class="mb-3">Your Details</h5>
+
+        <p><strong>First Name:</strong> {{ request.user.first_name|default:"-" }}</p>
+        <p><strong>Last Name:</strong> {{ request.user.last_name|default:"-" }}</p>
+        <p><strong>Email:</strong> {{ request.user.email|default:"Not set" }}</p>
+
+        <button class="btn btn-outline-primary mt-2" onclick="toggleEdit()">
+            Edit Details
+        </button>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- EDIT FORM (HIDDEN) -->
+    <!-- ========================= -->
+    <div class="card p-4 shadow-sm mb-4" id="editForm" style="display:none;">
+
+        <h5 class="mb-3">Update Your Details</h5>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label>First Name</label>
+                {{ form.first_name }}
+            </div>
+
+            <div class="mb-3">
+                <label>Last Name</label>
+                {{ form.last_name }}
+            </div>
+
+            <div class="mb-3">
+                <label>Email</label>
+                {{ form.email }}
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Save Changes
+            </button>
+
+            <button type="button" class="btn btn-secondary" onclick="toggleEdit()">
+                Cancel
+            </button>
+
+        </form>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- PLAN SECTION -->
+    <!-- ========================= -->
+    <div class="card p-4 shadow-sm">
+
+        <p><strong>Plan:</strong> {{ plan }}</p>
+
+        <hr>
+
+        {% if sub and sub.free_access %}
+            <p class="text-success">You have free access 🎉</p>
+
+        {% elif sub and sub.is_active and sub.stripe_subscription_id %}
+            <p class="text-success">Your subscription is active</p>
+            <a href="{% url 'resilia:customer_portal' %}" class="btn btn-outline-primary">
+                Manage Subscription
+            </a>
+
+        {% elif sub and not sub.has_used_trial %}
+            <p class="text-info">You can start your free trial</p>
+            <a href="{% url 'resilia:create_checkout_session' %}" class="btn btn-primary">
+                Start Free Trial
+            </a>
+
+        {% else %}
+            <p class="text-danger">Your free trial has already been used</p>
+            <a href="{% url 'resilia:create_checkout_session' %}" class="btn btn-primary">
+                Subscribe Now
+            </a>
+        {% endif %}
+
+    </div>
+
+</div>
+
+<!-- ========================= -->
+<!-- SIMPLE TOGGLE SCRIPT -->
+<!-- ========================= -->
+<script>
+function toggleEdit() {
+    const form = document.getElementById("editForm");
+    form.style.display = form.style.display === "none" ? "block" : "none";
+}
+</script>
+
+{% endblock %}

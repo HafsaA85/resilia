@@ -1,6 +1,5 @@
 from re import sub
 from urllib import request
-
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
@@ -23,6 +22,8 @@ from .forms import UserRegisterForm
 import json
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse
+from .forms import UserUpdateForm
+from django.contrib import messages
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -573,3 +574,36 @@ def stripe_webhook(request):
             print("⚠️ Subscription not found:", customer_id)
 
     return HttpResponse(status=200)
+
+@login_required
+def account(request):
+    sub = Subscription.objects.filter(user=request.user).first()
+
+    # PLAN LOGIC (keep what we built)
+    plan = "Free"
+
+    if sub:
+        if sub.free_access:
+            plan = "Free Access"
+        elif sub.is_active and sub.stripe_subscription_id:
+            plan = "Premium"
+        elif not sub.has_used_trial:
+            plan = "Trial Available"
+        else:
+            plan = "Free"
+
+    # 👉 FORM HANDLING
+    if request.method == "POST":
+        form = UserUpdateForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your details have been updated ✅")
+            return redirect("resilia:account")
+    else:
+        form = UserUpdateForm(instance=request.user)
+
+    return render(request, "account.html", {
+        "plan": plan,
+        "sub": sub,
+        "form": form
+    })
