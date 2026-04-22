@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Resilia{% endblock %}</title>
+    <title>{% block title %}Veylin{% endblock %}</title>
 
     <!-- Bootstrap CSS -->
     <link
@@ -19,12 +19,11 @@
 {% load org_tags %}
 <nav class="navbar navbar-expand-lg shadow-sm noor-navbar">
 
-
    <div class="container">
         <a class="navbar-brand p-0 m-0" href="{% url 'resilia:home' %}">
-            <img src="{% static 'images/resilia.png' %}" alt="Noor for Her" class="navbar-logo">
+            <!-- 🔥 CHANGE LOGO FILE NAME LATER -->
+            <img src="{% static 'images/veylin.png' %}" alt="Veylin" class="navbar-logo">
         </a>
-
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -45,50 +44,46 @@
                     <a class="nav-link" href="{% url 'resilia:work_with_me' %}">Private Sessions</a>
                 </li>
 
-            
                 {% if user.is_authenticated %}
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'resilia:tracker_list' %}">My Triggers</a>
-    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'resilia:tracker_list' %}">My Triggers</a>
+                    </li>
 
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'resilia:journal_list' %}">My Journal</a>
-    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'resilia:journal_list' %}">My Journal</a>
+                    </li>
 
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'resilia:account' %}">My Account</a>
-    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'resilia:account' %}">My Account</a>
+                    </li>
 
-    {% has_organisation request.user as has_org %}
+                    {% has_organisation request.user as has_org %}
 
-{% if not has_org %}
-  <a href="{% url 'resilia:upgrade' %}" class="btn btn-primary">
-      Manage Subscription
-  </a>
-{% endif %}
+                    {% if not has_org %}
+                        <a href="{% url 'resilia:upgrade' %}" class="btn btn-primary">
+                            Manage Subscription
+                        </a>
+                    {% endif %}
 
-    <li class="nav-item">
-        <a class="nav-link text-danger" href="{% url 'resilia:logout' %}">Logout</a>
-    </li>
-{% else %}
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'resilia:login' %}">Login</a>
-    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{% url 'resilia:logout' %}">Logout</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'resilia:login' %}">Login</a>
+                    </li>
 
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'resilia:contact' %}">Contact</a>
-    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'resilia:contact' %}">Contact</a>
+                    </li>
 
-    <li class="nav-item">
-        <a class="nav-link btn btn-primary ms-2 text-white"
-           href="{% url 'resilia:register' %}">
-            Join Now
-        </a>
-    </li>
-
-
-
-{% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-primary ms-2 text-white"
+                           href="{% url 'resilia:register' %}">
+                            Join Now
+                        </a>
+                    </li>
+                {% endif %}
 
             </ul>
         </div>
@@ -97,23 +92,22 @@
 
 <main class="page-content">
     {% if messages %}
-<div class="container mt-3">
-    {% for message in messages %}
-        <div class="card shadow-sm border-0" style="background-color:#f7f3f0;">
-            <div class="card-body" style="font-size: 0.95rem;">
-                {{ message }}
+    <div class="container mt-3">
+        {% for message in messages %}
+            <div class="card shadow-sm border-0" style="background-color:#f7f3f0;">
+                <div class="card-body" style="font-size: 0.95rem;">
+                    {{ message }}
+                </div>
             </div>
-        </div>
-    {% endfor %}
-</div>
-{% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
 
     {% block content %}{% endblock %}
 </main>
 
-
 <footer>
-    <p>© Resilia</p>
+    <p>© Veylin</p>
 </footer>
 
 <!-- Bootstrap JS -->
@@ -122,4 +116,3 @@
 ></script>
 </body>
 </html>
-
