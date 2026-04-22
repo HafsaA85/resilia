@@ -603,7 +603,8 @@ def account(request):
         form = UserUpdateForm(instance=request.user)
 
     return render(request, "account.html", {
-        "plan": plan,
-        "sub": sub,
-        "form": form
-    })
+    "plan": plan,
+    "sub": sub,
+    "form": form,
+    "is_active": sub.is_active if sub else False
+})
