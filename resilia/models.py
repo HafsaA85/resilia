@@ -167,3 +167,10 @@ class AccessCode(models.Model):
 
     def __str__(self):
         return self.code
+    
+class ExerciseCompletion(models.Model):
+     user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
+     exercise = models.ForeignKey("CBTExercise", on_delete=models.CASCADE)
+     completed_at = models.DateTimeField(auto_now_add=True)
+
+    

@@ -6,7 +6,7 @@
 <div class="container py-5" style="max-width: 820px;">
 
     <!-- Back -->
-    <a href="{% url 'resilia:tracker_list' %}"
+    <a href="{% url 'resilia:home' %}"
        class="btn btn-sm btn-outline-secondary mb-4"
        style="border-radius: 999px;">
         ← Back to exercises
@@ -42,8 +42,51 @@
                 {{ exercise.instructions|linebreaks }}
             </div>
 
+            <!-- Completion Button -->
+            {% if completed %}
+                <button class="btn btn-success mt-4" style="border-radius: 999px;" disabled>
+                    ✓ Completed
+                </button>
+            {% else %}
+                <button id="complete-btn"
+                        class="btn btn-success mt-4"
+                        style="border-radius: 999px;">
+                    I’ve completed this
+                </button>
+            {% endif %}
+
         </div>
     </div>
 
 </div>
+
+<script>
+const btn = document.getElementById("complete-btn");
+
+if (btn) {
+    btn.addEventListener("click", function() {
+        fetch("{% url 'resilia:complete_exercise' exercise.id %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                this.innerText = "✓ Completed";
+                this.disabled = true;
+                this.classList.remove("btn-success");
+                this.classList.add("btn-outline-success");
+            } else {
+                alert("Something went wrong.");
+            }
+        })
+        .catch(() => {
+            alert("Network error. Please try again.");
+        });
+    });
+}
+</script>
+
 {% endblock %}

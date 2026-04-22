@@ -11,7 +11,7 @@ from datetime import timedelta
 from django.db.models import Avg, Count
 from django.conf import settings
 from functools import wraps
-from .models import AnxietyTrigger, JournalEntry, Subscription, OrganisationLead, CBTExercise
+from .models import AnxietyTrigger, JournalEntry, Subscription, OrganisationLead, CBTExercise, ExerciseCompletion
 from .forms import AnxietyTriggerForm, JournalEntryForm, OrganisationContactForm
 from django.core.mail import send_mail
 from .utils import get_user_cbt_recommendations
@@ -19,11 +19,11 @@ from django.views.decorators.csrf import csrf_exempt
 import stripe
 import json
 from .forms import UserRegisterForm
-import json
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse
 from .forms import UserUpdateForm
 from django.contrib import messages
+from django.db.models import Max
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -156,17 +156,45 @@ def home(request):
 
     if sub:
         is_active = sub.is_active
-               
 
     # =========================
     # OPTIONAL CONTENT
     # =========================
-    affirmation = (
-        "You are allowed to go gently. Healing does not rush."
-        if journal_entries.exists()
-        else None
-    )
+    affirmation = None
 
+    journal_count = journal_entries.count()
+    has_entries = journal_count > 0
+
+    if not has_entries:
+        affirmation = "Start small. Even one thought written down is progress."
+
+    elif triggers.filter(intensity__gte=8).exists():
+        affirmation = "That sounds heavy. You don’t have to solve everything today."
+
+    elif streak >= 5:
+        affirmation = "You’re building something powerful. Keep going gently."
+
+    elif streak == 0:
+        affirmation = "It’s okay to restart. You haven’t lost your progress."
+
+    elif journal_count < 3:
+        affirmation = "You’re beginning to understand your patterns. Stay with it."
+
+    else:
+        affirmation = "You’re doing better than you think."
+    
+    max_intensity = triggers.aggregate(Max("intensity"))["intensity__max"] or 0
+
+    if max_intensity >= 9:
+        mood = "overwhelmed"
+    elif max_intensity >= 7:
+        mood = "high"
+    elif max_intensity >= 4:
+        mood = "moderate"
+    else:
+        mood = "low"
+
+    exercise = CBTExercise.objects.filter(mood_level=mood).order_by("?").first()
     return render(
         request,
         "home.html",
@@ -176,8 +204,25 @@ def home(request):
             "streak": streak,
             "affirmation": affirmation,
             "is_active": is_active,
+            "exercise": exercise,
         },
     )
+
+@login_required
+def complete_exercise(request, pk):
+    if request.method == "POST":
+        exercise = CBTExercise.objects.get(pk=pk)
+
+        ExerciseCompletion.objects.get_or_create(
+            user=request.user,
+            exercise=exercise
+        )
+        
+        exercise = CBTExercise.objects.first()
+
+        return JsonResponse({"status": "success"})
+
+    return JsonResponse({"status": "invalid"}, status=400)
 # =========================
 # STATIC PAGES
 # =========================
@@ -608,3 +653,14 @@ def account(request):
     "form": form,
     "is_active": sub.is_active if sub else False
 })
+
+@login_required
+def complete_exercise(request, pk):
+    exercise = CBTExercise.objects.get(pk=pk)
+
+    ExerciseCompletion.objects.get_or_create(
+        user=request.user,
+        exercise=exercise
+    )
+
+    return JsonResponse({"status": "success"})

@@ -48,5 +48,7 @@ urlpatterns = [
 
     path('stripe/webhook/', stripe_webhook, name='stripe_webhook'),
     path("account/", views.account, name="account"),
+    path("exercise/<int:pk>/", views.exercise_detail, name="exercise_detail"),
+    path("exercise/<int:pk>/complete/", views.complete_exercise, name="complete_exercise"),
 
 ]
