@@ -22,7 +22,7 @@
    <div class="container">
         <a class="navbar-brand p-0 m-0" href="{% url 'resilia:home' %}">
             <!-- 🔥 CHANGE LOGO FILE NAME LATER -->
-            <img src="{% static 'images/veylin.png' %}" alt="Veylin" class="navbar-logo">
+            <img src="{% static 'images/resilia.png' %}" alt="Veylin" class="navbar-logo">
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -53,17 +53,22 @@
                         <a class="nav-link" href="{% url 'resilia:journal_list' %}">My Journal</a>
                     </li>
 
-                    <li class="nav-item">
+                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'resilia:account' %}">My Account</a>
-                    </li>
+                     </li>
 
-                    {% has_organisation request.user as has_org %}
-
-                    {% if not has_org %}
-                        <a href="{% url 'resilia:upgrade' %}" class="btn btn-primary">
-                            Manage Subscription
-                        </a>
-                    {% endif %}
+                    
+                    {% if user.is_authenticated %}
+    {% if user.subscription and user.subscription.is_active and user.subscription.stripe_subscription_id %}
+        <a href="{% url 'resilia:customer_portal' %}" class="btn btn-primary">
+            Manage Subscription
+        </a>
+    {% else %}
+        <a href="{% url 'resilia:upgrade' %}" class="btn btn-primary">
+            Manage Subscription
+        </a>
+    {% endif %}
+{% endif %}
 
                     <li class="nav-item">
                         <a class="nav-link text-danger" href="{% url 'resilia:logout' %}">Logout</a>
