@@ -1,3 +1,5 @@
+from urllib import response
+
 from django.contrib import admin
 from .models import AnxietyTrigger, CBTExercise, JournalEntry, DailyPrompt
 from .models import OrganisationLead
@@ -6,6 +8,8 @@ from django.http import HttpResponse
 from .models import CBTExercise
 from .models import AccessCode
 from .models import Subscription
+from .models import Affiliate
+
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
@@ -15,7 +19,8 @@ class SubscriptionAdmin(admin.ModelAdmin):
 @admin.register(AccessCode)
 class AccessCodeAdmin(admin.ModelAdmin):
     list_display = ("code", "is_active", "max_uses", "used_count")
-    
+
+
 @admin.register(AnxietyTrigger)
 class AnxietyTriggerAdmin(admin.ModelAdmin):
     list_display = ("user", "situation", "intensity", "created_at")
@@ -105,7 +110,6 @@ class OrganisationLeadAdmin(admin.ModelAdmin):
         "mark_converted",
     ]
 
-    # ---------- CSV EXPORT ----------
     def export_csv(self, request, queryset):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = "attachment; filename=resilia_leads.csv"
@@ -136,25 +140,56 @@ class OrganisationLeadAdmin(admin.ModelAdmin):
 
     export_csv.short_description = "Export selected leads to CSV"
 
-    # ---------- PIPELINE ACTIONS ----------
     def mark_contacted(self, request, queryset):
         queryset.update(status="contacted")
-
     mark_contacted.short_description = "Mark as Contacted"
 
     def mark_demo(self, request, queryset):
         queryset.update(status="demo")
-
     mark_demo.short_description = "Mark as Demo Scheduled"
 
     def mark_converted(self, request, queryset):
         queryset.update(status="converted")
-
     mark_converted.short_description = "Mark as Converted"
 
-    @admin.register(CBTExercise)
-    
-    class CBTExerciseAdmin(admin.ModelAdmin):
-        list_display = ("title", "mood_level")
-        list_filter = ("mood_level",)
-search_fields = ("title", "description")
+
+# ✅ FIXED: CBTExerciseAdmin moved OUTSIDE
+@admin.register(CBTExercise)
+class CBTExerciseAdmin(admin.ModelAdmin):
+    list_display = ("title", "mood_level")
+    list_filter = ("mood_level",)
+    search_fields = ("title", "description")
+
+
+@admin.register(Affiliate)
+class AffiliateAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "active_users", "monthly_payout_display")
+    actions = ["export_affiliate_payouts"]
+
+    def active_users(self, obj):
+        return obj.active_users_count()
+    active_users.short_description = "Active Users"
+
+    def monthly_payout_display(self, obj):
+        return f"£{obj.monthly_payout():.2f}"
+    monthly_payout_display.short_description = "Monthly Payout"
+
+    # ✅ FIXED: proper indentation + writer usage
+    def export_affiliate_payouts(self, request, queryset):
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = "attachment; filename=affiliate_payouts.csv"
+
+        writer = csv.writer(response)
+        writer.writerow(["Code", "Name", "Active Users", "Monthly Payout (£)"])
+
+        for obj in queryset:
+            writer.writerow([
+                obj.code,
+                obj.name,
+                obj.active_users_count(),
+                f"{obj.monthly_payout():.2f}"
+            ])
+
+        return response
+
+    export_affiliate_payouts.short_description = "Export selected affiliates payouts"

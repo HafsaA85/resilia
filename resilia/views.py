@@ -24,6 +24,7 @@ from django.http import JsonResponse, HttpResponse
 from .forms import UserUpdateForm
 from django.contrib import messages
 from django.db.models import Max
+from resilia.models import Affiliate
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -250,6 +251,12 @@ def privacy_policy(request):
 # AUTH
 # =========================
 def register(request):
+
+    # STEP 3: capture ref
+    ref_code = request.GET.get("ref")
+    if ref_code:
+        request.session["ref_code"] = ref_code
+
     if request.method == "POST":
         form = UserRegisterForm(request.POST)  
         if form.is_valid():
@@ -257,13 +264,29 @@ def register(request):
             user.first_name = form.cleaned_data.get('first_name')
             user.last_name = form.cleaned_data.get('last_name')
             user.save()
-            Subscription.objects.create(user=user)
+
+            # create subscription
+            subscription = Subscription.objects.create(user=user)
+
+            # STEP 4: attach referral (MUST be here)
+            ref_code = request.session.get("ref_code")
+            if ref_code:
+                from resilia.models import Affiliate
+                try:
+                    affiliate = Affiliate.objects.get(code=ref_code)
+                    subscription.referred_by = affiliate
+                    subscription.save()
+                except Affiliate.DoesNotExist:
+                    pass
+
             login(request, user)
             return redirect("resilia:home")
+
     else:
         form = UserRegisterForm()
 
     return render(request, "register.html", {"form": form})
+    
 
 
 def login_view(request):

@@ -2,6 +2,10 @@ from datetime import timedelta
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+import secrets
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 
 
 # =========================
@@ -10,6 +14,14 @@ from django.utils import timezone
 class Subscription(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
+
+    # ✅ ADD THIS
+    referred_by = models.ForeignKey(
+        'Affiliate',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
     free_access = models.BooleanField(default=False)
     trial_start = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -151,7 +163,7 @@ class CBTExercise(models.Model):
     category = models.CharField(max_length=100, default="general")
     duration = models.IntegerField(default=2)  # in minutes
     instructions = models.TextField(blank=True)
-    
+
     class Meta:
         db_table = "resilia_cbtexercise"
 
@@ -176,4 +188,33 @@ class ExerciseCompletion(models.Model):
      exercise = models.ForeignKey("CBTExercise", on_delete=models.CASCADE)
      completed_at = models.DateTimeField(auto_now_add=True)
 
-    
+
+def generate_code():
+    return secrets.token_urlsafe(5)
+
+class Affiliate(models.Model):
+    code = models.CharField(max_length=50, unique=True, default=generate_code)
+    name = models.CharField(max_length=100)   
+
+    def __str__(self):
+        return self.code
+
+    # ✅ ADD THIS
+    def active_users_count(self):
+        from resilia.models import Subscription
+        return Subscription.objects.filter(
+            referred_by=self,
+            is_active=True
+        ).count()
+
+    # ✅ ADD THIS
+    def monthly_payout(self):
+        return self.active_users_count() * 1.25
+
+
+@receiver(post_save, sender=User)
+def create_affiliate_for_user(sender, instance, created, **kwargs):
+    if created:
+        Affiliate.objects.create(
+            name=instance.username
+        )
