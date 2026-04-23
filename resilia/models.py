@@ -209,7 +209,7 @@ class Affiliate(models.Model):
 
     # ✅ ADD THIS
     def monthly_payout(self):
-        return self.active_users_count() * 1.25
+        return self.active_users_count() * 1.0
 
 
 @receiver(post_save, sender=User)
