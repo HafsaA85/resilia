@@ -195,6 +195,10 @@ def home(request):
         mood = "low"
 
     exercise = CBTExercise.objects.filter(mood_level=mood).order_by("?").first()
+
+# fallback if none found
+    if not exercise:
+        exercise = CBTExercise.objects.filter(mood_level="moderate").first()
     return render(
         request,
         "home.html",

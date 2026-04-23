@@ -29,7 +29,7 @@
 
     {% else %}
         <h1 class="mb-4">
-            Welcome back, {{ user.first_name|default:user.username }} 
+            What's on your mind today, {{ user.first_name|default:user.username }} 
         </h1>
 
         <p class="lead mb-5">
@@ -141,24 +141,24 @@
 </div>
 {% endif %}
 
-<div class="container mt-4">
+{% if user.is_authenticated and exercise and exercise.id %}
+<div class="container mb-4">
+    <div class="card shadow-sm p-4" style="border-radius:18px;">
 
-    <div class="card shadow-sm p-4 mb-4" style="border-radius:18px;">
+        <p class="text-muted mb-2">🌿 Recommended for you today</p>
 
         <h5 class="mb-2">{{ exercise.title }}</h5>
         <p class="text-muted mb-3">{{ exercise.description }}</p>
-       <div class="mt-3">
+
         <a href="{% url 'resilia:exercise_detail' exercise.id %}"
            class="btn btn-primary"
            style="border-radius:999px; width: fit-content;">
             Start Exercise
         </a>
 
-       </div>
     </div>
-
 </div>
-
+{% endif %}
 
 <!-- =========================
  INSIGHTS

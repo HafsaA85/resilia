@@ -144,11 +144,14 @@ class CBTExercise(models.Model):
         ("overwhelmed", "Overwhelmed"),
     ]
 
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=255, unique=True)
     description = models.TextField()
     instructions = models.TextField()
     mood_level = models.CharField(max_length=20, choices=MOOD_CHOICES)
-
+    category = models.CharField(max_length=100, default="general")
+    duration = models.IntegerField(default=2)  # in minutes
+    instructions = models.TextField(blank=True)
+    
     class Meta:
         db_table = "resilia_cbtexercise"
 
