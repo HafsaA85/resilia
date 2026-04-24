@@ -163,7 +163,7 @@ class CBTExerciseAdmin(admin.ModelAdmin):
 
 @admin.register(Affiliate)
 class AffiliateAdmin(admin.ModelAdmin):
-    list_display = ("code", "name", "active_users", "monthly_payout_display")
+    list_display = ("code", "user", "active_users", "monthly_payout_display")
     actions = ["export_affiliate_payouts"]
 
     def active_users(self, obj):
@@ -180,12 +180,12 @@ class AffiliateAdmin(admin.ModelAdmin):
         response["Content-Disposition"] = "attachment; filename=affiliate_payouts.csv"
 
         writer = csv.writer(response)
-        writer.writerow(["Code", "Name", "Active Users", "Monthly Payout (£)"])
+        writer.writerow(["Code", "User", "Active Users", "Monthly Payout (£)"])
 
         for obj in queryset:
             writer.writerow([
                 obj.code,
-                obj.name,
+                obj.user.username if obj.user else "N/A",
                 obj.active_users_count(),
                 f"{obj.monthly_payout():.2f}"
             ])

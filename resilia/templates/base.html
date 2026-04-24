@@ -120,5 +120,69 @@
 <script
     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
 ></script>
+
+<script>
+function toggleShareMenu() {
+    const menu = document.getElementById("shareMenu");
+    menu.style.display = menu.style.display === "none" ? "block" : "none";
+}
+
+function shareWhatsApp() {
+    const link = document.getElementById("refLink").value;
+    const text = encodeURIComponent(
+        "This really helped me reflect and understand my thoughts. Try it: " + link
+    );
+    window.open("https://wa.me/?text=" + text, "_blank");
+    closeMenu();
+}
+
+function shareEmail() {
+    const link = document.getElementById("refLink").value;
+    const subject = encodeURIComponent("Thought this might help you");
+    const body = encodeURIComponent(
+        "Hey,\n\nI’ve been using this and thought of you:\n\n" + link
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    closeMenu();
+}
+
+function copyReferral(btn) {
+    const link = document.getElementById("refLink").value;
+
+    navigator.clipboard.writeText(link);
+
+    // show feedback
+    const originalText = btn.innerText;
+    btn.innerText = "Copied ✓";
+
+    setTimeout(() => {
+        btn.innerText = originalText;
+        closeMenu();
+    }, 1200);
+}
+
+function closeMenu() {
+    document.getElementById("shareMenu").style.display = "none";
+}
+</script>
+
+<script>
+document.addEventListener("click", function(e) {
+    const menu = document.getElementById("shareMenu");
+    const inviteBtn = document.getElementById("inviteBtn");
+    console.log("clicked", e.target);
+
+    // if menu doesn't exist, do nothing
+    if (!menu || !inviteBtn) return;
+
+    const clickedInsideMenu = menu.contains(e.target);
+    const clickedInviteBtn = inviteBtn.contains(e.target);
+
+    if (!clickedInsideMenu && !clickedInviteBtn) {
+        menu.style.display = "none";
+    }
+});
+</script>
+
 </body>
 </html>

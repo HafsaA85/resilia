@@ -5,7 +5,52 @@
 <!-- =========================
  HERO
 ========================= -->
-<div class="text-center p-5">
+<div class="container position-relative p-5">
+    {% if affiliate %}
+<div style="position:absolute; top:20px; right:20px;">
+
+    <input 
+        id="refLink"
+        type="text" 
+        value="https://app.veylin.co.uk/register/?ref={{ affiliate.code }}" 
+        readonly
+        style="position:absolute; left:-9999px;"
+    >
+
+    <button id="inviteBtn" onclick="toggleShareMenu()" class="btn btn-primary btn-sm">
+    Invite
+</button>
+<div id="shareMenu" 
+     style="
+        display:none;
+        position:absolute;
+        top:50px;
+        right:0;
+        background:white;
+        border-radius:12px;
+        box-shadow:0 4px 12px rgba(0,0,0,0.1);
+        padding:10px;
+        min-width:180px;
+     ">
+
+    <button onclick="shareWhatsApp()" class="dropdown-item">
+        WhatsApp
+    </button>
+
+    <button onclick="shareEmail()" class="dropdown-item">
+        Email
+    </button>
+
+    <button onclick="copyReferral(this)" class="dropdown-item">
+    Copy Link
+</button>
+
+</div>
+
+</div>
+{% endif %}
+
+<div class="text-center">
     {% if user.is_authenticated %}
 
 {% if trial_days_left %}
@@ -66,7 +111,7 @@
  PRIMARY ACTIONS
 ========================= -->
 <div class="container mb-4 text-center">
-    <div class="d-flex justify-content-center gap-3 flex-wrap">
+    <div class="d-flex justify-content-center gap-3 flex-wrap mt-4">
 
         {% if is_active %}
             

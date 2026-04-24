@@ -25,6 +25,8 @@ from .forms import UserUpdateForm
 from django.contrib import messages
 from django.db.models import Max
 from resilia.models import Affiliate
+from .models import Affiliate
+
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -124,10 +126,23 @@ print("✅ resilia.views loaded")
 # =========================
 # HOME
 # =========================
-def home(request):
-    if not request.user.is_authenticated:
-        return render(request, "home.html")
 
+
+def home(request):
+    affiliate = None
+
+    if request.user.is_authenticated:
+        try:
+            affiliate = Affiliate.objects.get(user=request.user)
+        except Affiliate.DoesNotExist:
+            affiliate = None
+
+    context = {
+        "affiliate": affiliate,
+        # keep your existing context variables here
+    }
+
+    return render(request, "home.html", context)
     # =========================
     # USER DATA
     # =========================

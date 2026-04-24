@@ -193,8 +193,13 @@ def generate_code():
     return secrets.token_urlsafe(5)
 
 class Affiliate(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        null=True,   # keep this temporarily
+        blank=True
+    )
     code = models.CharField(max_length=50, unique=True, default=generate_code)
-    name = models.CharField(max_length=100)   
 
     def __str__(self):
         return self.code
@@ -216,5 +221,5 @@ class Affiliate(models.Model):
 def create_affiliate_for_user(sender, instance, created, **kwargs):
     if created:
         Affiliate.objects.create(
-            name=instance.username
+            user=instance
         )
