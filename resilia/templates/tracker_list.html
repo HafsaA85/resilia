@@ -73,25 +73,4 @@
         </a>
     {% endif %}
 </div>
-
-<h3 class="mt-5 mb-3">Exercises for You Today</h3>
-
-<div class="row g-3">
-  {% for ex in exercises %}
-    <div class="col-md-6">
-      <div class="journal-card p-3 h-100">
-        <h5>{{ ex.title }}</h5>
-        <p class="text-muted small">{{ ex.description }}</p>
-
-        <a href="{% url 'resilia:exercise_detail' ex.pk %}"
-           class="btn btn-sm btn-primary mt-2">
-          Start Exercise
-        </a>
-      </div>
-    </div>
-  {% empty %}
-    <p class="text-muted">No exercises available yet.</p>
-  {% endfor %}
-</div>
-
 {% endblock %}

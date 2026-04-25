@@ -50,5 +50,8 @@ urlpatterns = [
     path("account/", views.account, name="account"),
     path("exercise/<int:pk>/", views.exercise_detail, name="exercise_detail"),
     path("exercise/<int:pk>/complete/", views.complete_exercise, name="complete_exercise"),
+    path("careers/", views.careers, name="careers"),
+    path("work-experience/", views.work_experience, name="work_experience"),
+    path("affiliate/", views.affiliate_info, name="affiliate_info"),
 
 ]

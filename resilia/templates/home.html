@@ -93,62 +93,19 @@
 
 {% endif %}
 
-    {% if is_active %}
-    <a href="{% url 'resilia:tracker_list' %}" class="btn btn-primary btn-lg">
-        Continue Your Journey
-    </a>
-{% else %}
-    <a href="{% url 'resilia:upgrade' %}" class="btn btn-primary btn-lg">
-        Unlock Full Access
-    </a>
-{% endif %}
-
 </div>
 
+<div class="text-center mt-5">
+
 {% if user.is_authenticated %}
-
-<!-- =========================
- PRIMARY ACTIONS
-========================= -->
-<div class="container mb-4 text-center">
-    <div class="d-flex justify-content-center gap-3 flex-wrap mt-4">
-
-        {% if is_active %}
-            
-            <a href="{% url 'resilia:tracker_list' %}"
-               class="btn btn-primary btn-lg px-4">
-                Anxiety Triggers
-            </a>
-
-            <a href="{% url 'resilia:journal_create' %}"
-               class="btn btn-primary btn-lg px-4">
-                Journal
-            </a>
-
-        {% else %}
-
-            <a href="{% url 'resilia:upgrade' %}"
-               class="btn btn-primary btn-lg px-4">
-                Anxiety Triggers
-            </a>
-
-            <a href="{% url 'resilia:upgrade' %}"
-               class="btn btn-primary btn-lg px-4">
-                Journal
-            </a>
-
-        {% endif %}
-
-    </div>
-
     <p class="text-muted mt-2" style="font-size: 0.9rem;">
         Track what happened, or write freely — both are private and just for you.
     </p>
-
+</div>
     <!-- =========================
     VISUAL STREAK
     ========================= -->
-    <div class="mt-3">
+    <div class="mt-3 text-center">
         <div class="d-flex justify-content-center gap-2">
             {% for day in last_7_days %}
                 <div

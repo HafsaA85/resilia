@@ -142,12 +142,15 @@ def home(request):
         # keep your existing context variables here
     }
 
-    return render(request, "home.html", context)
     # =========================
     # USER DATA
     # =========================
-    triggers = AnxietyTrigger.objects.filter(user=request.user)
-    journal_entries = JournalEntry.objects.filter(user=request.user)
+    if request.user.is_authenticated:
+       triggers = AnxietyTrigger.objects.filter(user=request.user)
+       journal_entries = JournalEntry.objects.filter(user=request.user)
+    else:
+       triggers = AnxietyTrigger.objects.none()
+       journal_entries = JournalEntry.objects.none()
 
     today = timezone.now().date()
     last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
@@ -166,12 +169,14 @@ def home(request):
     # =========================
     # SUBSCRIPTION
     # =========================
-    sub = Subscription.objects.filter(user=request.user).first()
+    is_active = False  # ✅ ALWAYS define first
 
-    is_active = False
+    sub = None
+    if request.user.is_authenticated:
+       sub = Subscription.objects.filter(user=request.user).first()
 
     if sub:
-        is_active = sub.is_active
+       is_active = sub.is_active
 
     # =========================
     # OPTIONAL CONTENT
@@ -225,6 +230,8 @@ def home(request):
             "affirmation": affirmation,
             "is_active": is_active,
             "exercise": exercise,
+            "affiliate": affiliate,
+            "has_access": is_active,
         },
     )
 
@@ -341,6 +348,15 @@ def tracker_list(request):
             "exercises": exercises,
         },
     )
+
+def careers(request):
+    return render(request, "careers.html")
+
+def work_experience(request):
+    return render(request, "work_experience.html")
+
+def affiliate_info(request):
+    return render(request, "affiliate_info.html")
 
 
 @login_required
