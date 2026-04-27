@@ -9,6 +9,14 @@
             <div class="card shadow-sm p-4">
 
                 <h2 class="text-center mb-3">Private Life Coaching</h2>
+                
+    {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} mt-3 mb-3 text-center">
+    {{ message }}
+</div>
+    {% endfor %}
+{% endif %}
 
                 <p class="text-center text-muted mb-4">
                     You don’t have to go through this alone. Share what’s on your mind and we’ll gently support you.
@@ -19,17 +27,35 @@
 
                     <div class="mb-3">
                         <label class="form-label">Your Name</label>
-                        <input type="text" name="name" class="form-control" required>
+                        <input 
+    type="text" 
+    name="name" 
+    class="form-control"
+    value="{{ prefilled_name }}"
+    {% if user.is_authenticated %}readonly{% endif %}
+    required
+>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Phone Number</label>
-                        <input type="tel" name="phone" class="form-control" required>
+                        <input 
+    type="tel" 
+    name="phone" 
+    class="form-control"
+    placeholder="+447123456789"
+    pattern="^\+\d{10,15}$"
+    title="Enter phone with country code (e.g. +447123456789)"
+    required
+>
+<small class="text-muted">Include country code (e.g. +44)</small>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control" required>
+                        <input type="email" name="email" class="form-control bg-light"value="{{ prefilled_email }}"
+    {% if user.is_authenticated %}readonly{% endif %}
+    required>
                     </div>
 
                     <div class="mb-3">

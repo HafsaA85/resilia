@@ -26,6 +26,9 @@ from django.contrib import messages
 from django.db.models import Max
 from resilia.models import Affiliate
 from .models import Affiliate
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+import re
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -83,11 +86,51 @@ def premium_required(view_func):
 # =========================
 def contact(request):
     if request.method == "POST":
-        name = request.POST.get("name")
-        email = request.POST.get("email")
-        phone = request.POST.get("phone")
-        message = request.POST.get("message")
 
+        phone = request.POST.get("phone", "").strip()
+        message = request.POST.get("message", "").strip()
+
+        # =========================
+        # Logged-in user
+        # =========================
+        if request.user.is_authenticated:
+            name = f"{request.user.first_name} {request.user.last_name}".strip()
+            email = request.user.email
+
+        # =========================
+        # Guest user
+        # =========================
+        else:
+            name = request.POST.get("name", "").strip()
+            email = request.POST.get("email", "").strip()
+
+            # Name validation
+            if not name:
+                messages.error(request, "Name is required.")
+                return redirect("resilia:contact")
+
+            # Email validation
+            try:
+                validate_email(email)
+            except ValidationError:
+                messages.error(request, "Please enter a valid email address.")
+                return redirect("resilia:contact")
+
+        # =========================
+        # Phone validation (ALL users)
+        # =========================
+        if not phone:
+            messages.error(request, "Phone number is required.")
+            return redirect("resilia:contact")
+
+        # Allow digits only (10–15 digits)
+        if not re.fullmatch(r"\d{10,15}", phone):
+            messages.error(request, "Enter phone with country code (e.g. +447123456789).")
+            return redirect("resilia:contact")
+
+        # =========================
+        # Save lead
+        # =========================
         OrganisationLead.objects.create(
             contact_name=name,
             email=email,
@@ -95,6 +138,9 @@ def contact(request):
             message=message,
         )
 
+        # =========================
+        # Send email notification
+        # =========================
         send_mail(
             subject="New Coaching Request",
             message=f"""
@@ -113,15 +159,17 @@ Message:
 
         return redirect("resilia:contact_success")
 
-    return render(request, "contact.html")
+    # =========================
+    # GET request (prefill form)
+    # =========================
+    return render(request, "contact.html", {
+        "prefilled_email": request.user.email if request.user.is_authenticated else "",
+        "prefilled_name": f"{request.user.first_name} {request.user.last_name}".strip() if request.user.is_authenticated else "",
+    })
 
 
 def contact_success(request):
     return render(request, "contact_success.html")
-
-
-print("✅ resilia.views loaded")
-
 
 # =========================
 # HOME
