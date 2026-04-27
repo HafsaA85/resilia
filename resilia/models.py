@@ -23,7 +23,7 @@ class Subscription(models.Model):
         on_delete=models.SET_NULL
     )
     free_access = models.BooleanField(default=False)
-    trial_start = models.DateTimeField(default=timezone.now)
+    trial_start = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     has_used_trial = models.BooleanField(default=False)
 
@@ -31,8 +31,10 @@ class Subscription(models.Model):
     stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
     
     def is_trial_active(self):
+        if not self.trial_start:
+            return False
         return timezone.now() <= self.trial_start + timedelta(days=7)
-
+        
     def __str__(self):
         return f"{self.user.username} Subscription"
 

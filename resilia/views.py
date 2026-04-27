@@ -70,7 +70,7 @@ def premium_required(view_func):
         except Subscription.DoesNotExist:
             return redirect("resilia:upgrade")
 
-        if not sub.is_active and not sub.free_access:
+        if not sub.is_active and not sub.free_access and not sub.is_trial_active():
              return redirect("resilia:upgrade")
 
         return view_func(request, *args, **kwargs)
@@ -176,7 +176,7 @@ def home(request):
        sub = Subscription.objects.filter(user=request.user).first()
 
     if sub:
-       is_active = sub.is_active
+       is_active = sub.is_active or sub.is_trial_active()
 
     # =========================
     # OPTIONAL CONTENT
@@ -630,6 +630,7 @@ def stripe_webhook(request):
             # 🔒 Mark trial as used immediately
             if not sub.has_used_trial:
                 sub.has_used_trial = True
+                sub.trial_start = timezone.now()
 
             sub.save()
 
