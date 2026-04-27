@@ -241,6 +241,19 @@ button.btn {
     background-color: #f5f5f5;
 }
 
+#breathingCircle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #8fb8ff, #4a7bd9);
+
+    transition: transform 4s ease-in-out,
+                box-shadow 4s ease-in-out,
+                opacity 1s ease;
+
+    box-shadow: 0 0 25px rgba(108,156,255,0.5);
+}
+
 
 
 

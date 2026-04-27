@@ -263,11 +263,35 @@ def home(request):
     else:
         mood = "low"
 
-    exercise = CBTExercise.objects.filter(mood_level=mood).order_by("?").first()
+    if request.user.is_authenticated:
+       completed_ids = ExerciseCompletion.objects.filter(
+        user=request.user
+    ).values_list("exercise_id", flat=True)
+
+    # Try to get NEW exercises first
+    exercise = CBTExercise.objects.filter(
+        mood_level=mood
+    ).exclude(
+        id__in=completed_ids
+    ).order_by("?").first()
+
+    # If all exercises done → allow repeats
+    if not exercise:
+        exercise = CBTExercise.objects.filter(
+            mood_level=mood
+        ).order_by("?").first()
+
+    else:
+    # For non-logged users (keep old behavior)
+        exercise = CBTExercise.objects.filter(
+        mood_level=mood
+    ).order_by("?").first()
 
 # fallback if none found
     if not exercise:
-        exercise = CBTExercise.objects.filter(mood_level="moderate").first()
+        exercise = CBTExercise.objects.filter(
+        mood_level="moderate"
+    ).first()
     return render(
         request,
         "home.html",
