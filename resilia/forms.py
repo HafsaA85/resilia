@@ -3,19 +3,24 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import AnxietyTrigger
 from .models import JournalEntry
-
-
-
+from django.forms import ModelChoiceField
 from django import forms
-from .models import JournalEntry
+
 
 class JournalEntryForm(forms.ModelForm):
+
     class Meta:
         model = JournalEntry
         fields = ['trigger', 'title', 'content']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):   # ✅ NOW INSIDE CLASS
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+
+        if user:
+            self.fields['trigger'].queryset = AnxietyTrigger.objects.filter(user=user)
+
+        self.fields['trigger'].empty_label = "Click to link a trigger or share how are you feeling today."
 
         self.fields['trigger'].widget.attrs.update({'class': 'form-control'})
         self.fields['title'].widget.attrs.update({'class': 'form-control'})
@@ -68,11 +73,6 @@ class AnxietyTriggerForm(forms.ModelForm):
             "outcome": forms.Textarea(attrs={"rows": 3}),
             "date": forms.DateInput(attrs={"type": "date"}),
         }
-
-class JournalEntryForm(forms.ModelForm):
-    class Meta:
-        model = JournalEntry
-        fields = ["trigger", "title", "content"]
 
 
 

@@ -470,9 +470,7 @@ def journal_create(request, trigger_id=None):
     if request.method == "POST":
         form = JournalEntryForm(request.POST)
 
-        form.fields["trigger"].queryset = AnxietyTrigger.objects.filter(
-            user=request.user
-        )
+        
 
         if form.is_valid():
             entry = form.save(commit=False)
@@ -486,12 +484,11 @@ def journal_create(request, trigger_id=None):
 
     else:
         form = JournalEntryForm(
-            initial={"trigger": trigger} if trigger else None
-        )
+    initial={"trigger": trigger} if trigger else None,
+    user=request.user
+)
 
-        form.fields["trigger"].queryset = AnxietyTrigger.objects.filter(
-            user=request.user
-        )
+        
 
     return render(
         request,
