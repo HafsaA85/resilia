@@ -143,8 +143,69 @@
 </div>
 {% endif %}
 
+<div class="container mt-4 mb-4">
+
+    <!-- TOGGLE BUTTON -->
+    <div class="text-center">
+        <button class="btn btn-light" 
+                type="button" 
+                data-bs-toggle="collapse" 
+                data-bs-target="#howItWorks"
+                style="border-radius:999px;">
+            <h3>How it works</h3>
+        </button>
+    </div>
+
+    <!-- COLLAPSIBLE CONTENT -->
+    <div class="collapse mt-4 mb-5" id="howItWorks">
+
+        <div class="card shadow-sm p-4" style="border-radius:18px;">
+
+            <div class="row text-center g-4">
+
+                <div class="col-md-4">
+                    <h6>1. Notice your triggers</h6>
+                    <p class="text-muted small">
+                        When something feels overwhelming, take a moment to log what happened. 
+                Be honest this space is yours.
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>2. Write freely</h6>
+                    <p class="text-muted small">
+                        There’s no right or wrong way to write. The more personal you are, 
+                the more clarity you’ll gain over time.
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>3. Understand patterns</h6>
+                    <p class="text-muted small">
+                        As you continue, patterns begin to appear helping you respond 
+                with more awareness and calm.
+                    </p>
+                </div>
+
+            </div>
+
+            <hr>
+
+            <p class="text-center text-muted mb-0" style="font-size:0.9rem;">
+                🔒 Everything you write is private and only visible to you. 
+        This is your space safe, personal, and completely yours.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
 {% if user.is_authenticated and exercise and exercise.id %}
-<div class="container mb-4">
+<div class="container mb-5">
     <div class="card shadow-sm p-4" style="border-radius:18px;">
 
         <p class="text-muted mb-2">🌿 Recommended for you today</p>
