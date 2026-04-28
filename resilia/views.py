@@ -263,10 +263,14 @@ def home(request):
     else:
         mood = "low"
 
+    completed_ids = []  # ✅ always exists
+
     if request.user.is_authenticated:
-       completed_ids = ExerciseCompletion.objects.filter(
-        user=request.user
-    ).values_list("exercise_id", flat=True)
+        completed_ids = list(
+        ExerciseCompletion.objects.filter(
+            user=request.user
+        ).values_list("exercise_id", flat=True)
+    )
 
     # Try to get NEW exercises first
     exercise = CBTExercise.objects.filter(
