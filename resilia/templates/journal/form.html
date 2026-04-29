@@ -21,7 +21,9 @@
         {% csrf_token %}
 
         <div class="form-group mb-3">
-          <label class="form-label">Trigger</label>
+          <label class="form-label">
+    Link a trigger (optional)
+</label>
           {{ form.trigger|add_class:"form-control" }}
         </div>
 
