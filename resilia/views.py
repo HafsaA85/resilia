@@ -39,20 +39,32 @@ def is_high_risk(text):
 
     text = text.lower()
 
-    high_risk_keywords = [
-        "suicidal",
-        "suicide",
+    def is_high_risk(text):
+      if not text:
+        return False
+
+    text = text.lower().replace("’", "'")
+
+    high_risk_phrases = [
+        "suicid",  # catches suicide, suicidal
         "kill myself",
         "end my life",
-        "don’t want to live",
+        "want to die",
+        "i want to die",
+        "i feel like dying",
+        "don't want to live",
         "dont want to live",
         "no reason to live",
         "better off dead",
+        "life is not worth it",
+        "i can't go on",
+        "cant go on",
+        "tired of living",
         "harm myself",
         "self harm",
     ]
 
-    return any(keyword in text for keyword in high_risk_keywords)
+    return any(phrase in text for phrase in high_risk_phrases)
 
 # =========================
 # SUBMIT LEAD
