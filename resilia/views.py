@@ -33,6 +33,26 @@ import re
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
+def is_high_risk(text):
+    if not text:
+        return False
+
+    text = text.lower()
+
+    high_risk_keywords = [
+        "suicidal",
+        "suicide",
+        "kill myself",
+        "end my life",
+        "don’t want to live",
+        "dont want to live",
+        "no reason to live",
+        "better off dead",
+        "harm myself",
+        "self harm",
+    ]
+
+    return any(keyword in text for keyword in high_risk_keywords)
 
 # =========================
 # SUBMIT LEAD
@@ -440,23 +460,53 @@ def affiliate_info(request):
 def tracker_create(request):
     if request.method == "POST":
         form = AnxietyTriggerForm(request.POST)
+
         if form.is_valid():
             trigger = form.save(commit=False)
             trigger.user = request.user
             trigger.save()
 
-            if trigger.intensity >= 8:
+            # Combine ALL text fields
+            text_to_check = " ".join([
+                getattr(trigger, "situation", "") or "",
+                getattr(trigger, "thought", "") or "",
+                getattr(trigger, "emotion", "") or "",
+                getattr(trigger, "behaviour", "") or "",
+                getattr(trigger, "outcome", "") or "",
+            ])
+
+            # 🔍 DEBUG PRINTS
+            print("---------- DEBUG START ----------")
+            print("TEXT TO CHECK:", text_to_check)
+            print("LOWER TEXT:", text_to_check.lower())
+            print("HIGH RISK RESULT:", is_high_risk(text_to_check))
+            print("---------------------------------")
+
+            # PRIORITY: High-risk first
+            if is_high_risk(text_to_check):
+                request.session["show_support_banner"] = True
+                request.session["support_banner_time"] = timezone.now().isoformat()
+                print("⚠️ HIGH RISK DETECTED")
+                messages.warning(
+                    request,
+                    "It sounds like you might be going through something really difficult. "
+                    "You’re not alone, support is available if you need it."
+                )
+
+            # Otherwise show gentle support
+            elif trigger.intensity >= 8:
+                print("ℹ️ HIGH INTENSITY TRIGGERED")
                 messages.info(
                     request,
                     "That sounds really intense. You don’t have to solve anything right now. Just breathe."
                 )
 
             return redirect("resilia:tracker_list")
+
     else:
         form = AnxietyTriggerForm()
 
     return render(request, "tracker_form.html", {"form": form})
-
 
 @login_required
 @premium_required
@@ -465,14 +515,45 @@ def tracker_update(request, pk):
 
     if request.method == "POST":
         form = AnxietyTriggerForm(request.POST, instance=trigger)
+
         if form.is_valid():
-            form.save()
+            trigger = form.save()
+
+            # Combine ALL text fields safely
+            text_to_check = " ".join([
+                getattr(trigger, "situation", "") or "",
+                getattr(trigger, "thought", "") or "",
+                getattr(trigger, "emotion", "") or "",
+                getattr(trigger, "behaviour", "") or "",
+                getattr(trigger, "outcome", "") or "",
+            ]).lower()  # ✅ important for case-insensitive
+
+            # 🚨 PRIORITY: High-risk first
+            if is_high_risk(text_to_check):
+                request.session["show_support_banner"] = True  # ✅ ADD THIS
+
+                messages.warning(
+                    request,
+                    "It sounds like you might be going through something really difficult. "
+                    "You’re not alone — support is available if you need it."
+                )
+
+            # 🌿 Otherwise gentle support
+            elif trigger.intensity >= 8:
+                messages.info(
+                    request,
+                    "That sounds really intense. You don’t have to solve anything right now. Just breathe."
+                )
+
             return redirect("resilia:tracker_list")
+
     else:
         form = AnxietyTriggerForm(instance=trigger)
 
-    return render(request, "tracker_form.html", {"form": form, "update": True})
-
+    return render(request, "tracker_form.html", {
+        "form": form,
+        "update": True
+    })
 @login_required
 @premium_required
 def exercise_detail(request, pk):
@@ -506,8 +587,17 @@ def journal_create(request, trigger_id=None):
 
             if trigger:
                 entry.trigger = trigger
-
+            text = entry.content  
+            high_risk = is_high_risk(text)
             entry.save()
+
+            # ✅ STEP 3: show message (using Django messages)
+            if high_risk:
+                messages.warning(
+                    request,
+                    "It sounds like you might be going through something really difficult. "
+                    "If you need immediate support, you can contact Samaritans (116 123) or visit samaritans.org."
+                )
             return redirect("resilia:journal_list")
 
     else:
@@ -531,9 +621,30 @@ def journal_edit(request, pk):
 
     if request.method == "POST":
         form = JournalEntryForm(request.POST, instance=entry)
+
         if form.is_valid():
-            form.save()
+            entry = form.save(commit=False)
+
+            # ✅ Safe + case-insensitive text
+            text = (entry.content or "").lower()
+
+            # ✅ Detect high-risk
+            high_risk = is_high_risk(text)
+
+            entry.save()
+
+            # 🚨 High-risk handling
+            if high_risk:
+                request.session["show_support_banner"] = True  # ✅ ADD THIS
+
+                messages.warning(
+                    request,
+                    "It sounds like you might be going through something really difficult. "
+                    "You’re not alone, support is available if you need it."
+                )
+
             return redirect("resilia:journal_list")
+
     else:
         form = JournalEntryForm(instance=entry)
 
@@ -796,3 +907,9 @@ def complete_exercise(request, pk):
     )
 
     return JsonResponse({"status": "success"})
+
+from django.http import JsonResponse
+
+def clear_support_banner(request):
+    request.session["show_support_banner"] = False
+    return JsonResponse({"status": "ok"})

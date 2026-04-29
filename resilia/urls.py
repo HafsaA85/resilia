@@ -53,5 +53,6 @@ urlpatterns = [
     path("careers/", views.careers, name="careers"),
     path("work-experience/", views.work_experience, name="work_experience"),
     path("affiliate/", views.affiliate_info, name="affiliate_info"),
+    path("clear-support-banner/", views.clear_support_banner, name="clear_support_banner"),
 
 ]
