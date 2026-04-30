@@ -29,24 +29,24 @@ from .models import Affiliate
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 import re
+from .utils import should_show_support_banner
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+
+import re
 
 def is_high_risk(text):
     if not text:
         return False
 
-    text = text.lower()
+    text = text.lower().replace("’", "'").strip()
 
-    def is_high_risk(text):
-      if not text:
-        return False
-
-    text = text.lower().replace("’", "'")
-
-    high_risk_phrases = [
-        "suicid",  # catches suicide, suicidal
+    # =========================
+    # DIRECT HIGH-RISK PHRASES
+    # =========================
+    direct_phrases = [
+        "suicid",
         "kill myself",
         "end my life",
         "want to die",
@@ -64,7 +64,41 @@ def is_high_risk(text):
         "self harm",
     ]
 
-    return any(phrase in text for phrase in high_risk_phrases)
+    if any(p in text for p in direct_phrases):
+        return True
+
+    # =========================
+    # PATTERN-BASED DETECTION
+    # =========================
+    patterns = [
+        r"\bi feel like (giving up|i'm done|i am done)\b",
+        r"\bi don't see (a point|any point|a future)\b",
+        r"\beverything (feels pointless|is pointless)\b",
+        r"\bi can't do this anymore\b",
+        r"\bi am exhausted with life\b",
+        r"\bi wish i wasn't here\b",
+        r"\bi wish i could disappear\b",
+        r"\bnothing matters anymore\b",
+    ]
+
+    if any(re.search(pattern, text) for pattern in patterns):
+        return True
+
+    # =========================
+    # WEIGHTED SCORING SYSTEM
+    # =========================
+    risk_words = [
+        "alone", "empty", "worthless", "hopeless",
+        "tired", "numb", "broken", "done", "lost"
+    ]
+
+    score = sum(1 for word in risk_words if word in text)
+
+    # If multiple emotional distress words → flag
+    if score >= 3:
+        return True
+
+    return False
 
 # =========================
 # SUBMIT LEAD
@@ -317,17 +351,14 @@ def home(request):
             mood_level=mood
         ).order_by("?").first()
 
-    else:
-    # For non-logged users (keep old behavior)
-        exercise = CBTExercise.objects.filter(
-        mood_level=mood
-    ).order_by("?").first()
 
 # fallback if none found
     if not exercise:
         exercise = CBTExercise.objects.filter(
         mood_level="moderate"
     ).first()
+        
+    show_banner = should_show_support_banner(request)
     return render(
         request,
         "home.html",
@@ -340,6 +371,7 @@ def home(request):
             "exercise": exercise,
             "affiliate": affiliate,
             "has_access": is_active,
+            "show_support_banner": show_banner,
         },
     )
 
@@ -448,12 +480,15 @@ def tracker_list(request):
     triggers = AnxietyTrigger.objects.filter(user=request.user)
     exercises = get_user_cbt_recommendations(request.user)
 
+    show_banner = should_show_support_banner(request)
+
     return render(
         request,
         "tracker_list.html",
         {
             "triggers": triggers,
             "exercises": exercises,
+            "show_support_banner": show_banner,
         },
     )
 
@@ -467,6 +502,7 @@ def affiliate_info(request):
     return render(request, "affiliate_info.html")
 
 
+
 @login_required
 @premium_required
 def tracker_create(request):
@@ -478,36 +514,22 @@ def tracker_create(request):
             trigger.user = request.user
             trigger.save()
 
-            # Combine ALL text fields
             text_to_check = " ".join([
                 getattr(trigger, "situation", "") or "",
                 getattr(trigger, "thought", "") or "",
                 getattr(trigger, "emotion", "") or "",
                 getattr(trigger, "behaviour", "") or "",
                 getattr(trigger, "outcome", "") or "",
-            ])
+            ]).lower()
 
-            # 🔍 DEBUG PRINTS
-            print("---------- DEBUG START ----------")
-            print("TEXT TO CHECK:", text_to_check)
-            print("LOWER TEXT:", text_to_check.lower())
-            print("HIGH RISK RESULT:", is_high_risk(text_to_check))
-            print("---------------------------------")
-
-            # PRIORITY: High-risk first
+            # 🚨 HIGH RISK
             if is_high_risk(text_to_check):
                 request.session["show_support_banner"] = True
-                request.session["support_banner_time"] = timezone.now().isoformat()
-                print("⚠️ HIGH RISK DETECTED")
-                messages.warning(
-                    request,
-                    "It sounds like you might be going through something really difficult. "
-                    "You’re not alone, support is available if you need it."
-                )
 
-            # Otherwise show gentle support
+                request.session["support_banner_time"] = timezone.now().isoformat()
+
+            # 💬 HIGH INTENSITY
             elif trigger.intensity >= 8:
-                print("ℹ️ HIGH INTENSITY TRIGGERED")
                 messages.info(
                     request,
                     "That sounds really intense. You don’t have to solve anything right now. Just breathe."
@@ -520,6 +542,7 @@ def tracker_create(request):
 
     return render(request, "tracker_form.html", {"form": form})
 
+
 @login_required
 @premium_required
 def tracker_update(request, pk):
@@ -529,33 +552,36 @@ def tracker_update(request, pk):
         form = AnxietyTriggerForm(request.POST, instance=trigger)
 
         if form.is_valid():
-            trigger = form.save()
 
-            # Combine ALL text fields safely
-            text_to_check = " ".join([
-                getattr(trigger, "situation", "") or "",
-                getattr(trigger, "thought", "") or "",
-                getattr(trigger, "emotion", "") or "",
-                getattr(trigger, "behaviour", "") or "",
-                getattr(trigger, "outcome", "") or "",
-            ]).lower()  # ✅ important for case-insensitive
+            if form.has_changed():
+                trigger = form.save()
 
-            # 🚨 PRIORITY: High-risk first
-            if is_high_risk(text_to_check):
-                request.session["show_support_banner"] = True  # ✅ ADD THIS
+                text_to_check = " ".join([
+                    trigger.situation or "",
+                    trigger.thought or "",
+                    trigger.emotion or "",
+                    trigger.behaviour or "",
+                    trigger.outcome or "",
+                ]).lower()
 
-                messages.warning(
-                    request,
-                    "It sounds like you might be going through something really difficult. "
-                    "You’re not alone — support is available if you need it."
-                )
+                # 🚨 HIGH RISK
+                if is_high_risk(text_to_check):
+                    request.session["show_support_banner"] = True
 
-            # 🌿 Otherwise gentle support
-            elif trigger.intensity >= 8:
-                messages.info(
-                    request,
-                    "That sounds really intense. You don’t have to solve anything right now. Just breathe."
-                )
+                    if not request.session.get("support_banner_time"):
+                        request.session["support_banner_time"] = timezone.now().isoformat()
+
+                # 💬 HIGH INTENSITY
+                elif trigger.intensity >= 8:
+                    messages.info(
+                        request,
+                        "That sounds really intense. You don’t have to solve anything right now. Just breathe."
+                    )
+
+                # ✅ OPTIONAL: clear if no longer risky
+                else:
+                    request.session.pop("show_support_banner", None)
+                    request.session.pop("support_banner_time", None)
 
             return redirect("resilia:tracker_list")
 
@@ -566,17 +592,31 @@ def tracker_update(request, pk):
         "form": form,
         "update": True
     })
+
 @login_required
 @premium_required
 def exercise_detail(request, pk):
     exercise = get_object_or_404(CBTExercise, pk=pk)
     return render(request, "exercise_detail.html", {"exercise": exercise})
 
+
+
 @login_required
 @premium_required
 def journal_list(request):
     entries = JournalEntry.objects.filter(user=request.user)
-    return render(request, "journal/list.html", {"entries": entries})
+
+    show_banner = should_show_support_banner(request)
+
+    return render(
+        request,
+        "journal/list.html",
+        {
+            "entries": entries,
+            "show_support_banner": show_banner,  # ✅ FIXED NAME
+        }
+    )
+
 
 @login_required
 @premium_required
@@ -591,40 +631,38 @@ def journal_create(request, trigger_id=None):
     if request.method == "POST":
         form = JournalEntryForm(request.POST)
 
-        
-
         if form.is_valid():
             entry = form.save(commit=False)
             entry.user = request.user
 
             if trigger:
                 entry.trigger = trigger
-            text = entry.content  
-            high_risk = is_high_risk(text)
+
+            text = (entry.content or "").lower()
+
             entry.save()
 
-            # ✅ STEP 3: show message (using Django messages)
-            if high_risk:
-                messages.warning(
-                    request,
-                    "It sounds like you might be going through something really difficult. "
-                    "If you need immediate support, you can contact Samaritans (116 123) or visit samaritans.org."
-                )
+            # 🚨 HIGH RISK
+            if is_high_risk(text):
+                request.session["show_support_banner"] = True
+
+                if not request.session.get("support_banner_time"):
+                    request.session["support_banner_time"] = timezone.now().isoformat()
+
             return redirect("resilia:journal_list")
 
     else:
         form = JournalEntryForm(
-    initial={"trigger": trigger} if trigger else None,
-    user=request.user
-)
-
-        
+            initial={"trigger": trigger} if trigger else None,
+            user=request.user
+        )
 
     return render(
         request,
         "journal/form.html",
         {"form": form, "trigger": trigger},
     )
+
 
 @login_required
 @premium_required
@@ -635,25 +673,25 @@ def journal_edit(request, pk):
         form = JournalEntryForm(request.POST, instance=entry)
 
         if form.is_valid():
-            entry = form.save(commit=False)
 
-            # ✅ Safe + case-insensitive text
-            text = (entry.content or "").lower()
+            if form.has_changed():
+                entry = form.save(commit=False)
 
-            # ✅ Detect high-risk
-            high_risk = is_high_risk(text)
+                text = (entry.content or "").lower()
 
-            entry.save()
+                entry.save()
 
-            # 🚨 High-risk handling
-            if high_risk:
-                request.session["show_support_banner"] = True  # ✅ ADD THIS
+                # 🚨 HIGH RISK
+                if is_high_risk(text):
+                    request.session["show_support_banner"] = True
 
-                messages.warning(
-                    request,
-                    "It sounds like you might be going through something really difficult. "
-                    "You’re not alone, support is available if you need it."
-                )
+                    if not request.session.get("support_banner_time"):
+                        request.session["support_banner_time"] = timezone.now().isoformat()
+
+                # ✅ OPTIONAL: clear if safe
+                else:
+                    request.session.pop("show_support_banner", None)
+                    request.session.pop("support_banner_time", None)
 
             return redirect("resilia:journal_list")
 
@@ -677,6 +715,7 @@ def journal_delete(request, pk):
     return render(request, "journal/confirm_delete.html", {
         "entry": entry
     })
+
 
 @login_required
 def customer_portal(request):
@@ -923,5 +962,6 @@ def complete_exercise(request, pk):
 from django.http import JsonResponse
 
 def clear_support_banner(request):
-    request.session["show_support_banner"] = False
+    request.session.pop("show_support_banner", None)
+    request.session.pop("support_banner_time", None)
     return JsonResponse({"status": "ok"})

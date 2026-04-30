@@ -4,26 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Veylin{% endblock %}</title>
-     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico.png' %}?v=1">
-    <link rel="shortcut icon" href="{% static 'images/favicon.ico.png' %}?v=1">
-    <!-- Bootstrap CSS -->
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
+
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'images/favicon.ico.png' %}?v=1">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom CSS -->
-     <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3">
-    
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3">
 </head>
+
 <body class="bg-light">
 {% load org_tags %}
-<nav class="navbar navbar-expand-lg shadow-sm noor-navbar">
 
-   <div class="container">
+<!-- ========================= NAVBAR ========================= -->
+<nav class="navbar navbar-expand-lg shadow-sm noor-navbar">
+    <div class="container">
+
         <a class="navbar-brand p-0 m-0" href="{% url 'resilia:home' %}">
-            <img src="{% static 'images/veylin.png' %}?v=2" alt="veylin" class="navbar-logo">
+            <img src="{% static 'images/veylin.png' %}?v=2" class="navbar-logo">
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -46,6 +46,7 @@
                 </li>
 
                 {% if user.is_authenticated %}
+
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'resilia:tracker_list' %}">My Triggers</a>
                     </li>
@@ -54,27 +55,28 @@
                         <a class="nav-link" href="{% url 'resilia:journal_list' %}">My Journal</a>
                     </li>
 
-                     <li class="nav-item">
+                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'resilia:account' %}">My Account</a>
-                     </li>
+                    </li>
 
-                    
-                    {% if user.is_authenticated %}
-    {% if user.subscription and user.subscription.is_active and user.subscription.stripe_subscription_id %}
-        <a href="{% url 'resilia:customer_portal' %}" class="btn btn-primary">
-            Manage Subscription
-        </a>
-    {% else %}
-        <a href="{% url 'resilia:upgrade' %}" class="btn btn-primary">
-            Manage Subscription
-        </a>
-    {% endif %}
-{% endif %}
+                    <li class="nav-item">
+                        {% if user.subscription and user.subscription.is_active and user.subscription.stripe_subscription_id %}
+                            <a href="{% url 'resilia:customer_portal' %}" class="btn btn-primary">
+                                Manage Subscription
+                            </a>
+                        {% else %}
+                            <a href="{% url 'resilia:upgrade' %}" class="btn btn-primary">
+                                Manage Subscription
+                            </a>
+                        {% endif %}
+                    </li>
 
                     <li class="nav-item">
                         <a class="nav-link text-danger" href="{% url 'resilia:logout' %}">Logout</a>
                     </li>
+
                 {% else %}
+
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'resilia:login' %}">Login</a>
                     </li>
@@ -89,6 +91,7 @@
                             Join Now
                         </a>
                     </li>
+
                 {% endif %}
 
             </ul>
@@ -96,202 +99,86 @@
     </div>
 </nav>
 
+<!-- ========================= MAIN ========================= -->
 <main class="page-content">
 
-    <!-- ✅ PERSISTENT SUPPORT BANNER -->
+    <!-- 🚨 SUPPORT BANNER -->
     {% if request.session.show_support_banner %}
     <div class="container mt-3">
-
         <div class="alert alert-warning text-center position-relative" style="border-radius:12px;">
 
-            <!-- CLOSE BUTTON -->
             <button onclick="dismissBanner()"
-                    style="
-                        position:absolute;
-                        top:8px;
-                        right:12px;
-                        border:none;
-                        background:none;
-                        font-size:18px;
-                        cursor:pointer;
-                        color:#6c757d;
-                    ">
+                    style="position:absolute; top:8px; right:12px; border:none; background:none; font-size:18px;">
                 ✕
             </button>
 
             <p class="mb-2">
-                It sounds like you might be going through something really difficult. 
+                It sounds like you might be going through something really difficult.
                 You’re not alone — support is available if you need it.
             </p>
 
-            <a href="https://www.samaritans.org/" target="_blank"
-               class="support-btn-soft">
+            <a href="https://www.samaritans.org/" target="_blank" class="support-btn-soft">
                 Get Support
             </a>
 
         </div>
-
     </div>
 
-    <!-- ✅ Auto clear AFTER 10 min -->
     <script>
         setTimeout(function() {
             fetch("{% url 'resilia:clear_support_banner' %}");
         }, 600000);
     </script>
     {% endif %}
-{% block content %}
+
+    <!-- NORMAL MESSAGES -->
+    {% if messages %}
+    <div class="container mt-2">
+        {% for message in messages|slice:"-1:" %}
+            {% if message.tags != "warning" %}
+                <div class="text-muted mb-2" style="font-size:0.9rem;">
+                    {{ message }}
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}
     {% endblock %}
 
 </main>
 
+<!-- ========================= FOOTER ========================= -->
 <footer class="mt-5 pt-5 pb-4" style="background-color:#f7f3f0;">
     <div class="container">
-        <div class="row">
 
-            <!-- Brand -->
-            <div class="col-md-3 mb-4">
-                <h5 class="mb-2">Veylin</h5>
-                <p class="text-muted">
-                    A safe space to pause, reflect, and understand your thoughts.
-                </p>
-            </div>
+        <div class="footer-disclaimer text-center mt-3" style="font-size:0.8rem; color:#6c757d;">
 
-            <!-- Product -->
-            <div class="col-md-3 mb-4">
-                <h6 class="mb-3">Product</h6>
-                <ul class="list-unstyled">
-                    <li><a href="{% url 'resilia:home' %}">Home</a></li>
-                    <li><a href="{% url 'resilia:tracker_list' %}">My Triggers</a></li>
-                    <li><a href="{% url 'resilia:journal_list' %}">My Journal</a></li>
-                </ul>
-            </div>
+            <p>
+                Veylin is a wellbeing support platform and is not a substitute for professional care.
+            </p>
 
-            <!-- Company -->
-            <div class="col-md-3 mb-4">
-                <h6 class="mb-3">Company</h6>
-                <ul class="list-unstyled">
-                    <li><a href="{% url 'resilia:contact' %}">Contact</a></li>
-                    <li><a href="{% url 'resilia:careers' %}">Careers</a></li>
-                    <li><a href="{% url 'resilia:work_experience' %}">Work Experience</a></li>
-                </ul>
-            </div>
+            <a href="https://www.samaritans.org/" target="_blank"
+               style="display:inline-block; padding:6px 14px; border-radius:999px; background:#f0f4f8;">
+                Get Support (Samaritans UK)
+            </a>
 
-            <!-- Earn -->
-            <div class="col-md-3 mb-4">
-                <h6 class="mb-3">Earn</h6>
-                <ul class="list-unstyled">
-                    <li><a href="{% url 'resilia:affiliate_info' %}">Become an Affiliate</a></li>
-                </ul>
-            </div>
+            <p class="mt-2">or call <strong>999</strong> in an emergency.</p>
 
         </div>
-
-        <div class="footer-disclaimer text-center mt-3" 
-     style="font-size: 0.8rem; color: #6c757d; max-width: 700px; margin: 0 auto;">
-
-    <p class="mt-2 mb-0">
-        Veylin is a wellbeing support platform and is not a substitute for professional medical or mental health care.
-        If you are in distress, please seek immediate help.
-    </p>
-
-    <a href="https://www.samaritans.org/" target="_blank"
-   style="
-       display:inline-block;
-       padding:6px 14px;
-       border-radius:999px;
-       background:#f0f4f8;
-       border:1px solid #d6e0ea;
-       color:#4a6fa5;
-       font-size:0.75rem;
-       font-weight:600;
-       text-decoration:none;
-   ">
-    Get Support (Samaritans UK)
-</a>
-
-    <p class="mt-2 mb-0"> 
-
-    or call <strong>999</strong> in an emergency.
-</p>
-
-</div>
 
         <hr>
 
-        <div class="text-center text-muted" style="font-size: 0.9rem;">
-            © {% now "Y" %} Veylin. All rights reserved.
+        <div class="text-center text-muted">
+            © {% now "Y" %} Veylin
         </div>
+
     </div>
 </footer>
 
-<!-- Bootstrap JS -->
-<script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-></script>
-
-<script>
-function toggleShareMenu() {
-    const menu = document.getElementById("shareMenu");
-    menu.style.display = menu.style.display === "none" ? "block" : "none";
-}
-
-function shareWhatsApp() {
-    const link = document.getElementById("refLink").value;
-    const text = encodeURIComponent(
-        "This really helped me reflect and understand my thoughts. Try it: " + link
-    );
-    window.open("https://wa.me/?text=" + text, "_blank");
-    closeMenu();
-}
-
-function shareEmail() {
-    const link = document.getElementById("refLink").value;
-    const subject = encodeURIComponent("Thought this might help you");
-    const body = encodeURIComponent(
-        "Hey,\n\nI’ve been using this and thought of you:\n\n" + link
-    );
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    closeMenu();
-}
-
-function copyReferral(btn) {
-    const link = document.getElementById("refLink").value;
-
-    navigator.clipboard.writeText(link);
-
-    // show feedback
-    const originalText = btn.innerText;
-    btn.innerText = "Copied ✓";
-
-    setTimeout(() => {
-        btn.innerText = originalText;
-        closeMenu();
-    }, 1200);
-}
-
-function closeMenu() {
-    document.getElementById("shareMenu").style.display = "none";
-}
-</script>
-
-<script>
-document.addEventListener("click", function(e) {
-    const menu = document.getElementById("shareMenu");
-    const inviteBtn = document.getElementById("inviteBtn");
-    console.log("clicked", e.target);
-
-    // if menu doesn't exist, do nothing
-    if (!menu || !inviteBtn) return;
-
-    const clickedInsideMenu = menu.contains(e.target);
-    const clickedInviteBtn = inviteBtn.contains(e.target);
-
-    if (!clickedInsideMenu && !clickedInviteBtn) {
-        menu.style.display = "none";
-    }
-});
-</script>
+<!-- ========================= SCRIPTS ========================= -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 function dismissBanner() {

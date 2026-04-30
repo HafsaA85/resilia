@@ -1,5 +1,20 @@
 from .models import AnxietyTrigger, CBTExercise
+from django.utils import timezone
+from datetime import timedelta
 
+
+def should_show_support_banner(request):
+    time_str = request.session.get("support_banner_time")
+
+    if not time_str:
+        return False
+
+    try:
+        banner_time = timezone.datetime.fromisoformat(time_str)
+    except Exception:
+        return False
+
+    return timezone.now() - banner_time < timedelta(hours=48)
 
 def anxiety_to_band(intensity: int) -> str:
     """
