@@ -190,7 +190,7 @@ def contact(request):
             return redirect("resilia:contact")
 
         # Allow digits only (10–15 digits)
-        if not re.fullmatch(r"\d{10,15}", phone):
+        if not re.fullmatch(r"\+?\d{10,15}", phone):
             messages.error(request, "Enter phone with country code (e.g. +447123456789).")
             return redirect("resilia:contact")
 
