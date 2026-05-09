@@ -4,7 +4,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 from resilia.views import submit_lead
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("zaynadmin/", admin.site.urls),
 
     # your custom login
     path("login/", LoginView.as_view(template_name="login.html"), name="login"),
