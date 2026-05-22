@@ -142,6 +142,10 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+BREVO_SENDER_EMAIL = "info@veylin.co.uk"
+BREVO_SENDER_NAME = "Veylin"
+
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 

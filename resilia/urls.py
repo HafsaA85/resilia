@@ -54,5 +54,6 @@ urlpatterns = [
     path("work-experience/", views.work_experience, name="work_experience"),
     path("affiliate/", views.affiliate_info, name="affiliate_info"),
     path("clear-support-banner/", views.clear_support_banner, name="clear_support_banner"),
+    path("verify/<uidb64>/<token>/", views.verify_email, name="verify_email"),
 
 ]

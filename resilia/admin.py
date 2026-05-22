@@ -9,6 +9,9 @@ from .models import CBTExercise
 from .models import AccessCode
 from .models import Subscription
 from .models import Affiliate
+from .models import UserProfile
+
+admin.site.register(UserProfile)
 
 
 @admin.register(Subscription)

@@ -30,7 +30,14 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 import re
 from .utils import should_show_support_banner
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import (urlsafe_base64_encode, urlsafe_base64_decode,)
+from django.utils.encoding import force_bytes
+from .emails import (send_verification_email, add_user_to_brevo)
+from django.contrib.auth import get_user_model
+from .models import UserProfile
 
+User = get_user_model()
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -375,6 +382,7 @@ def home(request):
         },
     )
 
+
 @login_required
 def complete_exercise(request, pk):
     if request.method == "POST":
@@ -416,38 +424,101 @@ def register(request):
 
     # STEP 3: capture ref
     ref_code = request.GET.get("ref")
+
     if ref_code:
         request.session["ref_code"] = ref_code
 
     if request.method == "POST":
-        form = UserRegisterForm(request.POST)  
+
+        form = UserRegisterForm(request.POST)
+
         if form.is_valid():
+
             user = form.save(commit=False)
+
             user.first_name = form.cleaned_data.get('first_name')
+
             user.last_name = form.cleaned_data.get('last_name')
+
+            # User inactive until email verified
+            user.is_active = False
+
             user.save()
 
             # create subscription
             subscription = Subscription.objects.create(user=user)
 
-            # STEP 4: attach referral (MUST be here)
+            # STEP 4: attach referral
             ref_code = request.session.get("ref_code")
+
             if ref_code:
+
                 from resilia.models import Affiliate
+
                 try:
                     affiliate = Affiliate.objects.get(code=ref_code)
+
                     subscription.referred_by = affiliate
+
                     subscription.save()
+
                 except Affiliate.DoesNotExist:
                     pass
 
-            login(request, user)
-            return redirect("resilia:home")
+            # =========================
+            # EMAIL VERIFICATION
+            # =========================
+
+            token = default_token_generator.make_token(user)
+
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+            verification_link = (
+                f"https://veylin.co.uk/verify/{uid}/{token}/"
+            )
+            print("EMAIL FUNCTION RUNNING")
+            send_verification_email(user, verification_link)
+
+            messages.success(
+                request,
+                "Account created successfully. Please check your email to verify your account."
+            )
+
+            return redirect("resilia:login")
 
     else:
+
         form = UserRegisterForm()
 
     return render(request, "register.html", {"form": form})
+
+def verify_email(request, uidb64, token):
+
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+
+    except:
+        user = None
+
+    if user and default_token_generator.check_token(user, token):
+
+        user.is_active = True
+        user.save()
+        add_user_to_brevo(user)
+        messages.success(
+            request,
+            "Your email has been verified successfully."
+        )
+
+        return redirect("resilia:login")
+
+    messages.error(
+        request,
+        "Verification link is invalid or expired."
+    )
+
+    return redirect("resilia:register")
     
 
 
@@ -513,7 +584,12 @@ def tracker_create(request):
             trigger = form.save(commit=False)
             trigger.user = request.user
             trigger.save()
+            profile = UserProfile.objects.get(user=request.user)
 
+            profile.last_mood_entry = timezone.now()
+
+            profile.save()
+            
             text_to_check = " ".join([
                 getattr(trigger, "situation", "") or "",
                 getattr(trigger, "thought", "") or "",
@@ -641,7 +717,11 @@ def journal_create(request, trigger_id=None):
             text = (entry.content or "").lower()
 
             entry.save()
+            profile = UserProfile.objects.get(user=request.user)
 
+            profile.last_journal_entry = timezone.now()
+
+            profile.save()
             # 🚨 HIGH RISK
             if is_high_risk(text):
                 request.session["show_support_banner"] = True
