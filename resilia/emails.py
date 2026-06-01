@@ -68,5 +68,7 @@ def add_user_to_brevo(user):
 
     response = requests.post(url, json=data, headers=headers)
 
+    print("BREVO STATUS:", response.status_code)
+    print("BREVO RESPONSE:", response.text)
 
     return response.text
