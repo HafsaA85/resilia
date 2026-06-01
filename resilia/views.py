@@ -525,17 +525,22 @@ def verify_email(request, uidb64, token):
 def login_view(request):
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
+
         if form.is_valid():
-            login(request, form.get_user())
-            
+            user = form.get_user()
+            print(f"LOGIN SUCCESS: {user.username}")
+
+            login(request, user)
             return redirect("resilia:home")
+
+        print("LOGIN FAILED")
+        print(form.errors)
 
         messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
 
     return render(request, "login.html", {"form": form})
-
 
 def logout_view(request):
     logout(request)
