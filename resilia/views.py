@@ -474,7 +474,7 @@ def register(request):
             uid = urlsafe_base64_encode(force_bytes(user.pk))
 
             verification_link = (
-                f"https://veylin.co.uk/verify/{uid}/{token}/"
+                f"https://app.veylin.co.uk/verify/{uid}/{token}/"
             )
             print("EMAIL FUNCTION RUNNING")
             send_verification_email(user, verification_link)
