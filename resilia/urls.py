@@ -3,6 +3,7 @@ from . import views
 from .views import stripe_webhook, submit_lead
 from django.contrib.auth.models import User
 
+
 app_name = "resilia"
 
 urlpatterns = [
@@ -55,5 +56,11 @@ urlpatterns = [
     path("affiliate/", views.affiliate_info, name="affiliate_info"),
     path("clear-support-banner/", views.clear_support_banner, name="clear_support_banner"),
     path("verify/<uidb64>/<token>/", views.verify_email, name="verify_email"),
+    path(
+    "account-verification-sent/",
+    views.verification_sent,
+    name="verification_sent"
+),
+    
 
 ]

@@ -479,12 +479,7 @@ def register(request):
             print("EMAIL FUNCTION RUNNING")
             send_verification_email(user, verification_link)
 
-            messages.success(
-                request,
-                "Account created successfully. Please check your email to verify your account."
-            )
-
-            return redirect("resilia:login")
+            return redirect("resilia:verification_sent")
 
     else:
 
@@ -492,20 +487,41 @@ def register(request):
 
     return render(request, "register.html", {"form": form})
 
+def verification_sent(request):
+    return render(
+        request,
+        "registration/verification_sent.html"
+    )
+
 def verify_email(request, uidb64, token):
+
+    print("UIDB64:", uidb64)
+    print("TOKEN:", token)
 
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
-        user = User.objects.get(pk=uid)
+        print("DECODED UID:", uid)
 
-    except:
+        user = User.objects.get(pk=uid)
+        print("USER:", user.username)
+
+    except Exception as e:
+        print("ERROR:", e)
         user = None
+
+    if user:
+        print(
+            "TOKEN VALID:",
+            default_token_generator.check_token(user, token)
+        )
 
     if user and default_token_generator.check_token(user, token):
 
         user.is_active = True
         user.save()
+
         add_user_to_brevo(user)
+
         messages.success(
             request,
             "Your email has been verified successfully."

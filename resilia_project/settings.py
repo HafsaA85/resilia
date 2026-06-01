@@ -80,6 +80,8 @@ MIDDLEWARE = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://app.veylin.co.uk",
+    "https://veylin.co.uk",
     "https://noor-for-her.onrender.com",
 ]
 
