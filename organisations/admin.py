@@ -3,8 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import Permission
-
-from .models import Organisation, OrganisationMembership, OrganisationLicense, Invoice
+from .models import Organisation, OrganisationMembership, OrganisationLicense, Invoice, Team
 from resilia_project.services.ai_marketing import generate_outreach_email
 
 # ---------- Helper ----------
@@ -76,14 +75,18 @@ class OrganisationMembershipAdmin(admin.ModelAdmin):
             perms = Permission.objects.filter(
                 content_type__app_label="organisations",
                 codename__in=[
-                    "view_organisation",
-                    "view_organisationmembership",
-                    "add_organisationmembership",
-                    "change_organisationmembership",
-                    "view_organisationlicense",
-                    "view_invoice",
-                ],
+    "view_organisation",
+    "view_organisationmembership",
+    "add_organisationmembership",
+    "change_organisationmembership",
+    "view_organisationlicense",
+    "view_invoice",
+    "view_team",
+    "add_team",
+    "change_team",
+]
             )
+            
             user.user_permissions.add(*perms)
             user.save()
 
@@ -200,3 +203,9 @@ class InvoiceAdmin(admin.ModelAdmin):
             return qs
         org = user_org(request.user)
         return qs.filter(organisation=org) if org else qs.none()
+
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    list_display = ("name", "organisation")
+    search_fields = ("name",)
+    list_filter = ("organisation",)    

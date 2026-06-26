@@ -14,6 +14,7 @@ from .models import UserProfile
 admin.site.register(UserProfile)
 
 
+
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ("user", "is_active", "trial_start", "stripe_customer_id", "stripe_subscription_id")
