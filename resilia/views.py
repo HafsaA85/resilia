@@ -871,7 +871,7 @@ def create_checkout_session(request):
         billing_address_collection='required',
         allow_promotion_codes=True,
         line_items=[{
-            "price": "price_1Szn42FT8cf21M5WpK8rHELs",
+            "price": "price_1TtAHnFT8cf21M5WOSolJLF5",
             "quantity": 1,
         }],
         subscription_data={
